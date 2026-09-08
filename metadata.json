@@ -1,0 +1,7 @@
+{
+  "name": "Terrenos Ricardo - Quinta Celia Hipotecas de Terrenos & Topografía",
+  "description": "Cotizador de terrenos y planes de pago, control de amortización mensual, recibos de pago con envío por correo, integración Supabase y agente topógrafo experto de Quinta Celia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
