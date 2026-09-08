@@ -185,9 +185,9 @@ export function generarSupabaseSQL(): string {
 
 -- 1. Tabla de Clientes y Terrenos
 CREATE TABLE IF NOT EXISTS public.clientes_quinta_celia (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
-  email TEXT NOT NULL,
+  email TEXT,
   telefono TEXT,
   direccion TEXT,
   cedula TEXT,
@@ -207,15 +207,19 @@ CREATE TABLE IF NOT EXISTS public.clientes_quinta_celia (
   estado TEXT DEFAULT 'activo',
   topografo_dictamen TEXT,
   topografo_validado BOOLEAN DEFAULT true,
+  datos_json JSONB,
   creado_en TIMESTAMPTZ DEFAULT NOW(),
   actualizado_en TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Si la tabla ya existía, asegurar la columna datos_json
+ALTER TABLE public.clientes_quinta_celia ADD COLUMN IF NOT EXISTS datos_json JSONB;
+
 -- 2. Tabla de Pagos de Cuotas y Recibos
 CREATE TABLE IF NOT EXISTS public.pagos_quinta_celia (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   recibo_numero TEXT UNIQUE NOT NULL,
-  cliente_id UUID REFERENCES public.clientes_quinta_celia(id) ON DELETE CASCADE,
+  cliente_id TEXT,
   mes_numero INT NOT NULL,
   monto_total NUMERIC(12,2) NOT NULL,
   abono_capital NUMERIC(12,2) NOT NULL,
@@ -234,9 +238,11 @@ ALTER TABLE public.clientes_quinta_celia ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pagos_quinta_celia ENABLE ROW LEVEL SECURITY;
 
 -- 4. Políticas para acceso con anon key (lectura y escritura pública para el simulador)
+DROP POLICY IF EXISTS "Permitir todo a anon en clientes" ON public.clientes_quinta_celia;
 CREATE POLICY "Permitir todo a anon en clientes" ON public.clientes_quinta_celia
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Permitir todo a anon en pagos" ON public.pagos_quinta_celia;
 CREATE POLICY "Permitir todo a anon en pagos" ON public.pagos_quinta_celia
   FOR ALL TO anon USING (true) WITH CHECK (true);
 `;

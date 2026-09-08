@@ -1,26 +1,31 @@
 import { ClienteComprador, PagoRealizado, SupabaseSettings } from '../types';
+import { generarTablaAmortizacion } from '../utils/calculos';
 
 const STORAGE_KEY_SETTINGS = 'quinta_celia_supabase_config_v1';
 const STORAGE_KEY_CLIENTES = 'quinta_celia_clientes_v1';
 const STORAGE_KEY_PAGOS = 'quinta_celia_pagos_v1';
 
 export const defaultSupabaseSettings: SupabaseSettings = {
-  url: '',
-  anonKey: '',
+  url: 'https://bvblossugxhxttmkfpnf.supabase.co',
+  anonKey: 'sb_publishable_VQsDcGd6Lx6nusumq8Fl5A_N5pESetG',
   tableNameClientes: 'clientes_quinta_celia',
   tableNamePagos: 'pagos_quinta_celia',
-  conectado: false,
+  conectado: true,
 };
 
 export function obtenerSupabaseConfig(): SupabaseSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.url && parsed.anonKey) return parsed;
+    }
   } catch (e) {
     console.error('Error al leer config de Supabase:', e);
   }
   return defaultSupabaseSettings;
 }
+
 
 export function guardarSupabaseConfig(config: SupabaseSettings): void {
   try {
@@ -85,6 +90,7 @@ export async function guardarClienteSupabase(cliente: ClienteComprador, config: 
   const endpoint = `${cleanUrl}/rest/v1/${config.tableNameClientes || 'clientes_quinta_celia'}`;
 
   const payload = {
+    id: cliente.id,
     nombre: cliente.nombre,
     email: cliente.email,
     telefono: cliente.telefono,
@@ -106,8 +112,10 @@ export async function guardarClienteSupabase(cliente: ClienteComprador, config: 
     estado: cliente.estado,
     topografo_dictamen: cliente.topografoDictamen,
     topografo_validado: cliente.topografoValidado,
+    datos_json: cliente,
     actualizado_en: new Date().toISOString()
   };
+
 
   try {
     const res = await fetch(endpoint, {
@@ -403,45 +411,86 @@ export async function cargarClientesDesdeSupabase(config: SupabaseSettings): Pro
     const rows = await res.json();
     if (!Array.isArray(rows)) return null;
 
-    return rows.map((r: any) => ({
-      id: r.id || `cli-${Date.now()}`,
-      nombre: r.nombre || 'Comprador',
-      email: r.email || '',
-      telefono: r.telefono || '',
-      direccion: r.direccion || '',
-      cedula: r.cedula || '',
-      loteNombre: r.lote_nombre || 'Lote Quinta Celia',
-      loteNumero: r.lote_numero || '1',
-      medidas: {
-        x1: Number(r.medida_x1) || 20,
-        x2: Number(r.medida_x2) || 20,
-        y1: Number(r.medida_y1) || 25,
-        areaM2: Number(r.area_m2) || 500,
-        perimetro: 90,
-        varasCuadradas: Math.round((Number(r.area_m2) || 500) * 1.4308),
-        tipoPoligono: 'regular' as const,
-        anguloInclinacion: 2
-      },
-      topografoValidado: r.topografo_validado ?? true,
-      topografoNombre: 'Ing. Celso R. Valdivia (20+ años exp.)',
-      topografoDictamen: r.topografo_dictamen || 'Medidas x1, x2 y y1 validadas.',
-      topografoFecha: new Date().toISOString().split('T')[0],
-      precioM2: Number(r.precio_m2) || 45,
-      precioTotal: Number(r.precio_total) || 20000,
-      enganche: Number(r.enganche) || 4000,
-      enganchePorcentaje: 20,
-      montoFinanciado: Number(r.monto_financiado) || 16000,
-      plazoMeses: Number(r.plazo_meses) || 36,
-      tasaInteresAnual: Number(r.tasa_interes_anual) || 9.5,
-      cuotaMensual: Number(r.cuota_mensual) || 500,
-      fechaInicio: r.fecha_inicio || new Date().toISOString().split('T')[0],
-      estado: r.estado || 'activo',
-      amortizacion: [],
-      pagos: [],
-      notas: '',
-      creadoEn: r.creado_en || new Date().toISOString(),
-      actualizadoEn: r.actualizado_en || new Date().toISOString()
-    }));
+    return rows.map((r: any) => {
+      let datosObj: any = null;
+      if (r.datos_json) {
+        datosObj = typeof r.datos_json === 'string' ? JSON.parse(r.datos_json) : r.datos_json;
+      }
+
+      if (datosObj && typeof datosObj === 'object' && datosObj.nombre) {
+        const montoFinanciado = Number(r.monto_financiado) || Number(datosObj.montoFinanciado) || 16000;
+        const tasaInteres = Number(r.tasa_interes_anual) || Number(datosObj.tasaInteresAnual) || 9.5;
+        const plazo = Number(r.plazo_meses) || Number(datosObj.plazoMeses) || 36;
+        const fechaInicio = r.fecha_inicio || datosObj.fechaInicio || '2026-01-01';
+
+        return {
+          ...datosObj,
+          id: String(r.id || datosObj.id),
+          nombre: r.nombre || datosObj.nombre,
+          cedula: r.cedula || datosObj.cedula,
+          telefono: r.telefono || datosObj.telefono,
+          email: r.email || datosObj.email,
+          loteNombre: r.lote_nombre || datosObj.loteNombre,
+          loteNumero: r.lote_numero || datosObj.loteNumero,
+          precioTotal: Number(r.precio_total) || Number(datosObj.precioTotal),
+          enganche: Number(r.enganche) || Number(datosObj.enganche),
+          montoFinanciado,
+          plazoMeses: plazo,
+          tasaInteresAnual: tasaInteres,
+          cuotaMensual: Number(r.cuota_mensual) || Number(datosObj.cuotaMensual),
+          estado: r.estado || datosObj.estado || 'activo',
+          amortizacion: (Array.isArray(datosObj.amortizacion) && datosObj.amortizacion.length > 0)
+            ? datosObj.amortizacion
+            : generarTablaAmortizacion(montoFinanciado, tasaInteres, plazo, fechaInicio),
+          pagos: Array.isArray(datosObj.pagos) ? datosObj.pagos : []
+        };
+      }
+
+      const montoFinanciado = Number(r.monto_financiado) || 16000;
+      const tasaInteres = Number(r.tasa_interes_anual) || 9.5;
+      const plazo = Number(r.plazo_meses) || 36;
+      const fechaInicio = r.fecha_inicio || new Date().toISOString().split('T')[0];
+
+      return {
+        id: String(r.id || `cli-${Date.now()}`),
+        nombre: r.nombre || 'Comprador',
+        email: r.email || '',
+        telefono: r.telefono || '',
+        direccion: r.direccion || '',
+        cedula: r.cedula || '',
+        loteNombre: r.lote_nombre || 'Lote Quinta Celia',
+        loteNumero: r.lote_numero || '1',
+        medidas: {
+          x1: Number(r.medida_x1) || 20,
+          x2: Number(r.medida_x2) || 20,
+          y1: Number(r.medida_y1) || 25,
+          areaM2: Number(r.area_m2) || 500,
+          perimetro: 90,
+          varasCuadradas: Math.round((Number(r.area_m2) || 500) * 1.4308),
+          tipoPoligono: 'regular' as const,
+          anguloInclinacion: 2
+        },
+        topografoValidado: r.topografo_validado ?? true,
+        topografoNombre: 'Ing. Celso R. Valdivia (20+ años exp.)',
+        topografoDictamen: r.topografo_dictamen || 'Medidas x1, x2 y y1 validadas.',
+        topografoFecha: new Date().toISOString().split('T')[0],
+        precioM2: Number(r.precio_m2) || 45,
+        precioTotal: Number(r.precio_total) || 20000,
+        enganche: Number(r.enganche) || 4000,
+        enganchePorcentaje: 20,
+        montoFinanciado,
+        plazoMeses: plazo,
+        tasaInteresAnual: tasaInteres,
+        cuotaMensual: Number(r.cuota_mensual) || 500,
+        fechaInicio,
+        estado: r.estado || 'activo',
+        amortizacion: generarTablaAmortizacion(montoFinanciado, tasaInteres, plazo, fechaInicio),
+        pagos: [],
+        notas: '',
+        creadoEn: r.creado_en || new Date().toISOString(),
+        actualizadoEn: r.actualizado_en || new Date().toISOString()
+      };
+    });
   } catch (err) {
     console.warn('Error fetching from Supabase:', err);
     return null;
