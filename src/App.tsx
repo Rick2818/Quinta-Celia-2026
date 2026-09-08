@@ -32,6 +32,7 @@ import { RegistroPagoModal } from './components/RegistroPagoModal';
 import { ReciboPagoModal } from './components/ReciboPagoModal';
 import { ExportarEscritorioModal } from './components/ExportarEscritorioModal';
 import { BackupModal } from './components/BackupModal';
+import { BuscarClienteModal } from './components/BuscarClienteModal';
 
 
 export default function App() {
@@ -127,6 +128,31 @@ export default function App() {
   const [clienteParaRecibo, setClienteParaRecibo] = useState<ClienteComprador | null>(null);
 
   const [isExportarEscritorioOpen, setIsExportarEscritorioOpen] = useState(false);
+  const [isBuscarClienteOpen, setIsBuscarClienteOpen] = useState(false);
+
+  // Atajo global de teclado para abrir búsqueda (Ctrl+K o Ctrl+B)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'b')) {
+        e.preventDefault();
+        setIsBuscarClienteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleSeleccionarClienteDesdeBusqueda = (cliente: ClienteComprador) => {
+    setClientes(prev => {
+      if (!prev.some(c => c.id === cliente.id)) {
+        return [cliente, ...prev];
+      }
+      return prev;
+    });
+    setClienteSeleccionadoId(cliente.id);
+    setPestañaActiva('clientes');
+    mostrarNotificacion(`Expediente de "${cliente.nombre}" cargado.`, 'info');
+  };
 
 
   // Toast Notification
@@ -294,8 +320,19 @@ export default function App() {
               </button>
             </div>
 
-            {/* Right Tools (Export/Desktop, ZIP, Backup, Supabase & New Buyer) */}
+            {/* Right Tools (Search, Export/Desktop, ZIP, Backup, Supabase & New Buyer) */}
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                id="btn-nav-buscar-cliente"
+                onClick={() => setIsBuscarClienteOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                title="Buscar cliente por Nombre o DUI en la base de datos (Ctrl+K)"
+              >
+                <span>🔍</span>
+                <span>Buscar Cliente</span>
+                <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/30 text-amber-200 font-mono hidden sm:inline">DUI</span>
+              </button>
+
               <button
                 id="btn-nav-backup"
                 onClick={() => setIsBackupOpen(true)}
@@ -395,6 +432,7 @@ export default function App() {
               setDatosSimulacionPrellenados(null);
               setIsNuevoClienteOpen(true);
             }}
+            onBuscarClienteClick={() => setIsBuscarClienteOpen(true)}
             onRegistrarPagoClick={(cliente, mes) => {
               setClienteParaPago(cliente);
               setMesParaPago(mes);
@@ -525,6 +563,24 @@ export default function App() {
         }}
       />
 
+      {/* 8. Modal de Búsqueda Avanzada por Nombre o DUI */}
+      <BuscarClienteModal
+        isOpen={isBuscarClienteOpen}
+        onClose={() => setIsBuscarClienteOpen(false)}
+        clientes={clientes}
+        onSeleccionarCliente={handleSeleccionarClienteDesdeBusqueda}
+        onRegistrarPagoCliente={(cliente) => {
+          setClienteParaPago(cliente);
+          setMesParaPago(undefined);
+          setIsRegistroPagoOpen(true);
+        }}
+        onNuevoClienteConDatos={(datos) => {
+          setDatosSimulacionPrellenados(datos);
+          setIsNuevoClienteOpen(true);
+        }}
+        supabaseConfig={supabaseConfig}
+        monedaSimbolo={configSistema.monedaSimbolo}
+      />
 
     </div>
   );

@@ -9,6 +9,7 @@ interface ControlPagosClientesProps {
   clienteSeleccionadoId?: string;
   onSeleccionarCliente: (id: string) => void;
   onNuevoClienteClick: () => void;
+  onBuscarClienteClick?: () => void;
   onRegistrarPagoClick: (cliente: ClienteComprador, mes?: number) => void;
   onVerReciboClick: (pago: PagoRealizado, cliente: ClienteComprador) => void;
   onAbrirTopografoConMedidas: (medidas: MedidasTerreno, clienteNombre?: string) => void;
@@ -20,6 +21,7 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
   clienteSeleccionadoId,
   onSeleccionarCliente,
   onNuevoClienteClick,
+  onBuscarClienteClick,
   onRegistrarPagoClick,
   onVerReciboClick,
   onAbrirTopografoConMedidas,
@@ -31,18 +33,24 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
   // Cliente activo
   const clienteActivo = clientes.find(c => c.id === clienteSeleccionadoId) || clientes[0];
 
-  // Filtrado
+  const normalizar = (txt: string) =>
+    (txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[-\s]/g, '');
+
+  // Filtrado por Nombre, DUI, Lote, Teléfono, etc.
   const clientesFiltrados = clientes.filter(c => {
     if (filtroEstado !== 'todos' && c.estado !== filtroEstado) return false;
     if (busqueda) {
-      const q = busqueda.toLowerCase();
+      const q = busqueda.toLowerCase().trim();
+      const qNorm = normalizar(busqueda);
       return (
         c.nombre.toLowerCase().includes(q) ||
-        c.telefono.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        c.loteNombre.toLowerCase().includes(q) ||
-        c.loteNumero.toLowerCase().includes(q) ||
-        c.direccion.toLowerCase().includes(q)
+        normalizar(c.nombre).includes(qNorm) ||
+        (c.cedula && (c.cedula.toLowerCase().includes(q) || normalizar(c.cedula).includes(qNorm))) ||
+        (c.telefono && (c.telefono.toLowerCase().includes(q) || normalizar(c.telefono).includes(qNorm))) ||
+        (c.email && c.email.toLowerCase().includes(q)) ||
+        (c.loteNombre && c.loteNombre.toLowerCase().includes(q)) ||
+        (c.loteNumero && c.loteNumero.toLowerCase().includes(q)) ||
+        (c.direccion && c.direccion.toLowerCase().includes(q))
       );
     }
     return true;
@@ -65,15 +73,30 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onNuevoClienteClick}
-          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-          </svg>
-          Registrar Nuevo Comprador
-        </button>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {onBuscarClienteClick && (
+            <button
+              onClick={onBuscarClienteClick}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0 active:scale-95"
+              title="Buscar cliente por Nombre o DUI en la base de datos"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span>Buscar Cliente (Nombre / DUI)</span>
+            </button>
+          )}
+
+          <button
+            onClick={onNuevoClienteClick}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0 active:scale-95"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Registrar Nuevo Comprador</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Layout: Buyer Selector (Sidebar / Grid) + Active Buyer Detail */}
@@ -84,13 +107,23 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
           
           {/* Search & Filter Bar */}
           <div className="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 space-y-2">
-            <input
-              type="text"
-              placeholder="Buscar por nombre, teléfono, lote..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="🔍 Buscar por Nombre, DUI, Lote, Celular..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+              {busqueda && (
+                <button
+                  onClick={() => setBusqueda('')}
+                  className="absolute right-2.5 top-2 text-slate-500 hover:text-white text-xs"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
             <div className="flex gap-1 text-[11px]">
               {(['todos', 'activo', 'liquidado'] as const).map(f => (
@@ -133,15 +166,20 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-white text-xs truncate">
                           {cliente.nombre}
                         </h4>
-                        <p className="text-[11px] text-emerald-400 font-mono">
-                          {cliente.loteNombre} (Lote #{cliente.loteNumero})
-                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <p className="text-[11px] text-emerald-400 font-mono">
+                            {cliente.loteNombre} (Lote #{cliente.loteNumero})
+                          </p>
+                          <span className="text-[9px] font-mono text-amber-300 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
+                            DUI: {cliente.cedula || 'Sin registrar'}
+                          </span>
+                        </div>
                       </div>
-                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold shrink-0 ${
                         cliente.estado === 'liquidado'
                           ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
                           : 'bg-amber-950 text-amber-300 border border-amber-700'
