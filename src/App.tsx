@@ -33,6 +33,7 @@ import { ReciboPagoModal } from './components/ReciboPagoModal';
 import { ExportarEscritorioModal } from './components/ExportarEscritorioModal';
 import { BackupModal } from './components/BackupModal';
 import { BuscarClienteModal } from './components/BuscarClienteModal';
+import { AccesoMovilModal } from './components/AccesoMovilModal';
 
 
 export default function App() {
@@ -129,6 +130,7 @@ export default function App() {
 
   const [isExportarEscritorioOpen, setIsExportarEscritorioOpen] = useState(false);
   const [isBuscarClienteOpen, setIsBuscarClienteOpen] = useState(false);
+  const [isAccesoMovilOpen, setIsAccesoMovilOpen] = useState(false);
 
   // Atajo global de teclado para abrir búsqueda (Ctrl+K o Ctrl+B)
   useEffect(() => {
@@ -331,6 +333,17 @@ export default function App() {
                 <span>🔍</span>
                 <span>Buscar Cliente</span>
                 <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/30 text-amber-200 font-mono hidden sm:inline">DUI</span>
+              </button>
+
+              <button
+                id="btn-nav-acceso-movil"
+                onClick={() => setIsAccesoMovilOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                title="Generar código QR y enlace de acceso directo para celulares en el terreno"
+              >
+                <span>📱</span>
+                <span>Acceso Celular</span>
+                <span className="text-[10px] px-1 py-0.2 rounded bg-emerald-500/30 text-emerald-200 font-mono hidden sm:inline">QR</span>
               </button>
 
               <button
@@ -580,6 +593,13 @@ export default function App() {
         }}
         supabaseConfig={supabaseConfig}
         monedaSimbolo={configSistema.monedaSimbolo}
+      />
+
+      {/* 9. Modal de Acceso Directo Móvil y Código QR */}
+      <AccesoMovilModal
+        isOpen={isAccesoMovilOpen}
+        onClose={() => setIsAccesoMovilOpen(false)}
+        urlPublica="https://rick2818.github.io/Quinta-Celia-2026/"
       />
 
     </div>
