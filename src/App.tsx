@@ -324,28 +324,17 @@ export default function App() {
               </button>
             </div>
 
-            {/* Right Tools (Search, Mobile QR, WhatsApp, Backup, Export/Desktop, Supabase & New Buyer) */}
+            {/* Right Tools (Mobile QR, WhatsApp, Backup, and paired Client Buttons) */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <button
-                id="btn-nav-buscar-cliente"
-                onClick={() => setIsBuscarClienteOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
-                title="Buscar cliente por Nombre o DUI en la base de datos (Ctrl+K)"
-              >
-                <span>🔍</span>
-                <span>Buscar Cliente</span>
-                <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/30 text-amber-200 font-mono hidden sm:inline">DUI</span>
-              </button>
-
               <button
                 id="btn-nav-acceso-movil"
                 onClick={() => setIsAccesoMovilOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                className="px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
                 title="Generar código QR y enlace de acceso directo para celulares en el terreno"
               >
                 <span>📱</span>
-                <span>Acceso Celular</span>
-                <span className="text-[10px] px-1 py-0.2 rounded bg-emerald-500/30 text-emerald-200 font-mono hidden sm:inline">QR</span>
+                <span className="hidden lg:inline">Acceso Celular</span>
+                <span className="text-[10px] px-1 py-0.2 rounded bg-emerald-500/30 text-emerald-200 font-mono">QR</span>
               </button>
 
               <a
@@ -353,34 +342,49 @@ export default function App() {
                 href="https://wa.me/50375743444?text=Hola,%20quisiera%20consultar%20sobre%20los%20lotes%20campestres%20de%20Quinta%20Celia"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 hover:text-emerald-200 border border-emerald-500/50 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                className="px-2.5 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 hover:text-emerald-200 border border-emerald-500/50 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
                 title="Línea Oficial de WhatsApp para Leads y Cobranzas: 7574-3444"
               >
                 <span>💬</span>
-                <span className="hidden sm:inline">WhatsApp Leads</span>
+                <span className="hidden lg:inline">WhatsApp Leads</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/30 text-emerald-200 font-mono font-bold">7574-3444</span>
               </a>
 
               <button
                 id="btn-nav-backup"
                 onClick={() => setIsBackupOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
                 title="Centro de Respaldos JSON/CSV y Configuración de Divisas/Mora"
               >
                 <span>🛡️</span>
                 <span className="hidden sm:inline">Respaldos</span>
               </button>
 
-              <button
-                onClick={() => {
-                  setDatosSimulacionPrellenados(null);
-                  setIsNuevoClienteOpen(true);
-                }}
-                className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <span>+</span>
-                <span className="hidden sm:inline">Nuevo Comprador</span>
-              </button>
+              {/* Botones a la par: Cliente Existente y Nuevo Cliente */}
+              <div className="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-xl border border-slate-800">
+                <button
+                  id="btn-nav-buscar-cliente"
+                  onClick={() => setIsBuscarClienteOpen(true)}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                  title="Buscar o seleccionar cliente existente por Nombre o DUI (Ctrl+K)"
+                >
+                  <span>👤</span>
+                  <span>Cliente Existente</span>
+                </button>
+
+                <button
+                  id="btn-nav-nuevo-cliente"
+                  onClick={() => {
+                    setDatosSimulacionPrellenados(null);
+                    setIsNuevoClienteOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+                  title="Registrar un nuevo cliente o comprador"
+                >
+                  <span>+</span>
+                  <span>Nuevo Cliente</span>
+                </button>
+              </div>
             </div>
 
           </div>
