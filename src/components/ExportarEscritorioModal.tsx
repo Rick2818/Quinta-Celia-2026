@@ -198,8 +198,9 @@ export const ExportarEscritorioModal: React.FC<ExportarEscritorioModalProps> = (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/40">120m Activo</span>
                 </h4>
                 <p className="text-slate-300 text-xs mt-1 leading-relaxed">
-                  Archivo HTML 100% autónomo con el simulador configurado hasta <strong>120 meses (10 años)</strong>, desglose de amortización completa y compatible con doble clic en Windows.
+                  Archivo HTML 100% autónomo con el Módulo Administrativo Finca Celia configurado hasta <strong>120 meses (10 años)</strong>, desglose de amortización completa y compatible con doble clic en Windows.
                 </p>
+
               </div>
               <span className="text-2xl">⚡</span>
             </div>

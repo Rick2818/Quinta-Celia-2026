@@ -231,6 +231,21 @@ export default function App() {
     }
   };
 
+  const handleActualizarDocumentosCliente = async (clienteId: string, documentos: NonNullable<ClienteComprador['documentos']>) => {
+    let clienteActualizado: ClienteComprador | null = null;
+    setClientes(prev => prev.map(c => {
+      if (c.id === clienteId) {
+        clienteActualizado = { ...c, documentos, actualizadoEn: new Date().toISOString() };
+        return clienteActualizado;
+      }
+      return c;
+    }));
+    mostrarNotificacion(`✓ Bóveda de documentos actualizada en el expediente.`);
+    if (clienteActualizado && supabaseConfig.conectado) {
+      await guardarClienteEnSupabase(supabaseConfig, clienteActualizado);
+    }
+  };
+
   const handleProcederDesdeSimulador = (datosSim: any) => {
     setDatosSimulacionPrellenados(datosSim);
     setIsNuevoClienteOpen(true);
@@ -470,6 +485,7 @@ export default function App() {
               setIsReciboOpen(true);
             }}
             onAbrirTopografoConMedidas={handleAbrirTopografoDesdeMedidas}
+            onActualizarDocumentos={handleActualizarDocumentosCliente}
             monedaSimbolo={configSistema.monedaSimbolo}
           />
         )}

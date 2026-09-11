@@ -38,12 +38,15 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
   ];
 
   const [nombreLote, setNombreLote] = useState('Lote Campestre Finca Celia');
-  const [modoPrecio, setModoPrecio] = useState<'porM2' | 'total'>('porM2');
-  const [precioM2, setPrecioM2] = useState<number>(45);
-  const [precioTotalManual, setPrecioTotalManual] = useState<number>(30000);
+  const [precioTotal, setPrecioTotal] = useState<number>(30000);
+  const [precioM2, setPrecioM2] = useState<number>(() => {
+    return Math.round((30000 / (medidasTopograficas.areaM2 || 500)) * 100) / 100;
+  });
 
   // Parámetros de hipoteca (Preconfigurado a 120 meses)
   const [enganchePorcentaje, setEnganchePorcentaje] = useState<number>(20);
+  const [engancheManualDolares, setEngancheManualDolares] = useState<number>(6000);
+  const [modoEnganche, setModoEnganche] = useState<'porcentaje' | 'monto'>('porcentaje');
   const [plazoMeses, setPlazoMeses] = useState<number>(120);
   const [tasaInteresAnual, setTasaInteresAnual] = useState<number>(9.5);
 
@@ -51,12 +54,34 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
   const [mostrarTabla120, setMostrarTabla120] = useState<boolean>(true);
   const [busquedaMes120, setBusquedaMes120] = useState<string>('');
 
-  // Calcular precio total dinámico basado en el Precio del Metro Cuadrado
-  const precioTotal = modoPrecio === 'porM2'
-    ? Math.round(medidasTopograficas.areaM2 * precioM2)
-    : precioTotalManual;
+  // Sincronización bi-direccional cuando Ricardo cambia el Precio Final
+  const handleCambiarPrecioFinal = (nuevoPrecio: number) => {
+    const safePrecio = Math.max(0, nuevoPrecio);
+    setPrecioTotal(safePrecio);
+    if (medidasTopograficas.areaM2 > 0) {
+      setPrecioM2(Math.round((safePrecio / medidasTopograficas.areaM2) * 100) / 100);
+    }
+    if (modoEnganche === 'porcentaje') {
+      setEngancheManualDolares(Math.round(safePrecio * (enganchePorcentaje / 100)));
+    }
+  };
 
-  const engancheMonto = Math.round(precioTotal * (enganchePorcentaje / 100));
+  // Sincronización bi-direccional cuando se ajusta el Precio del Metro Cuadrado
+  const handleCambiarPrecioM2 = (nuevoM2: number) => {
+    const safeM2 = Math.max(0, nuevoM2);
+    setPrecioM2(safeM2);
+    const nuevoTotal = Math.round(medidasTopograficas.areaM2 * safeM2);
+    setPrecioTotal(nuevoTotal);
+    if (modoEnganche === 'porcentaje') {
+      setEngancheManualDolares(Math.round(nuevoTotal * (enganchePorcentaje / 100)));
+    }
+  };
+
+  // Cálculos de prima y financiamiento
+  const engancheMonto = modoEnganche === 'porcentaje'
+    ? Math.round(precioTotal * (enganchePorcentaje / 100))
+    : engancheManualDolares;
+
   const montoFinanciado = Math.max(0, precioTotal - engancheMonto);
   const cuotaMensual = calcularCuotaMensual(montoFinanciado, tasaInteresAnual, plazoMeses);
 
@@ -65,6 +90,10 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
 
   const porcentajeCapital = totalPagar > 0 ? Math.round((montoFinanciado / totalPagar) * 100) : 100;
   const porcentajeInteres = 100 - porcentajeCapital;
+
+  const precioPorVara2 = medidasTopograficas.varasCuadradas > 0
+    ? Math.round((precioTotal / medidasTopograficas.varasCuadradas) * 100) / 100
+    : 0;
 
   // Generación dinámica de la tabla de amortización para 120 meses
   const tablaAmortizacion120 = generarTablaAmortizacion(
@@ -80,8 +109,7 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
 
   const handleSeleccionarPreset = (preset: typeof PRESETS_FINCA_CELIA[0]) => {
     setNombreLote(preset.nombre);
-    setPrecioM2(preset.precioM2);
-    setModoPrecio('porM2');
+    handleCambiarPrecioM2(preset.precioM2);
   };
 
   const handleDescargarAmortizacionCSV = () => {
@@ -121,7 +149,7 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
       precioM2,
       precioTotal,
       enganche: engancheMonto,
-      enganchePorcentaje,
+      enganchePorcentaje: modoEnganche === 'porcentaje' ? enganchePorcentaje : Math.round((engancheMonto / (precioTotal || 1)) * 100),
       montoFinanciado,
       plazoMeses,
       tasaInteresAnual,
@@ -129,6 +157,7 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
       loteSugerido: nombreLote
     });
   };
+
 
   return (
     <div className="space-y-6">
@@ -211,143 +240,241 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
           </div>
 
           {/* ========================================================================= */}
-          {/* ESPACIO DESTACADO EXCLUSIVO: PRECIO DEL METRO CUADRADO */}
+          {/* PANEL PRINCIPAL: PRECIO FINAL DEL TERRENO (FIJADO POR RICARDO) */}
           {/* ========================================================================= */}
-          <div className="bg-gradient-to-br from-emerald-950/80 via-slate-900 to-slate-950 border-2 border-emerald-500/70 rounded-3xl p-5 shadow-2xl space-y-3.5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-900/60 pb-3">
+          <div className="bg-gradient-to-br from-amber-950/70 via-slate-900 to-slate-950 border-2 border-amber-500/70 rounded-3xl p-5 shadow-2xl space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-900/60 pb-3">
               <div>
-                <label className="text-sm sm:text-base font-display font-extrabold text-white flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Precio del Metro Cuadrado ($ / m²)
+                <label className="text-sm sm:text-base font-display font-black text-white flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+                  Precio Final del Terreno (Fijado por Ricardo)
                 </label>
-                <p className="text-[11px] text-slate-300 mt-0.5">
-                  Este número actualiza en tiempo real el precio total del terreno y la tabla de amortización a 120 meses.
+                <p className="text-[11px] text-amber-200/80 mt-0.5">
+                  Tú decides el precio final: este número define inmediatamente la tabla de amortización y las cuotas para los 120 meses.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 self-start sm:self-center">
-                <span className="text-xs text-slate-400 font-semibold">Valor fijado:</span>
-                <span className="font-mono text-base font-extrabold text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-xl border border-emerald-500/40">
-                  ${precioM2} / m²
+                <span className="text-xs text-slate-400 font-semibold">Precio Total:</span>
+                <span className="font-mono text-lg font-black text-amber-400 bg-amber-500/20 px-3.5 py-1 rounded-xl border border-amber-500/40 shadow-inner">
+                  {formatMoneda(precioTotal)}
                 </span>
               </div>
             </div>
 
-            {/* Input Numérico Principal */}
+            {/* Input Numérico del Precio Final */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
               <div className="sm:col-span-5 relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 font-bold text-lg pointer-events-none">$</span>
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400 font-bold text-xl pointer-events-none">$</span>
+                <input
+                  type="number"
+                  min="1000"
+                  max="1000000"
+                  step="500"
+                  value={precioTotal}
+                  onChange={(e) => handleCambiarPrecioFinal(parseFloat(e.target.value) || 0)}
+                  placeholder="Ej: 30000"
+                  className="w-full pl-8 pr-12 py-3 bg-slate-950 border-2 border-amber-500/80 rounded-2xl text-white font-mono text-xl font-black focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all shadow-inner"
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 pointer-events-none">USD</span>
+              </div>
+
+              {/* Slider Rápido de Precio Final */}
+              <div className="sm:col-span-7 flex flex-col gap-1">
+                <input
+                  type="range"
+                  min="10000"
+                  max="100000"
+                  step="500"
+                  value={precioTotal}
+                  onChange={(e) => handleCambiarPrecioFinal(parseFloat(e.target.value) || 10000)}
+                  className="w-full accent-amber-400 h-2.5 bg-slate-800 rounded-lg cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                  <span>$10,000</span>
+                  <span className="text-amber-400 font-bold">Rango Típico Finca Celia ($20k - $60k)</span>
+                  <span>$100,000</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Botones de Precios Finales Rápidos */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] text-slate-400 mr-1">Precios comunes:</span>
+              {[18000, 22500, 25000, 30000, 35000, 40000, 45000, 50000].map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => handleCambiarPrecioFinal(p)}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                    precioTotal === p
+                      ? 'bg-amber-400 text-slate-950 font-extrabold shadow-md ring-2 ring-amber-300'
+                      : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  ${(p / 1000).toFixed(p % 1000 === 0 ? 0 : 1)}k
+                </button>
+              ))}
+            </div>
+
+            {/* Indicador de Equivalencia en $/m2 y $/v2 */}
+            <div className="bg-slate-950/90 p-3 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 font-mono">
+                <span className="text-slate-400 text-[11px]">Cálculo por metro:</span>
+                <span className="text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                  ${precioM2} / m²
+                </span>
+                <span className="text-slate-400 text-[11px]">(${precioPorVara2} / v²)</span>
+              </div>
+              <div className="text-[11px] text-slate-300">
+                <span>Para un terreno de: </span>
+                <strong className="text-white font-mono">{medidasTopograficas.areaM2.toLocaleString()} m²</strong>
+                <span className="text-slate-400"> ({medidasTopograficas.varasCuadradas.toLocaleString()} v²)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* PANEL SECUNDARIO: PRECIO DEL METRO CUADRADO ($/m²) SINCRONIZADO */}
+          {/* ========================================================================= */}
+          <div className="bg-slate-950/60 border border-slate-800 rounded-3xl p-4.5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <label className="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2">
+                  <span>📐</span>
+                  <span>O calcular ingresando el Precio del Metro Cuadrado ($ / m²)</span>
+                </label>
+                <p className="text-[10px] text-slate-400">
+                  Si prefieres cotizar por metro, este campo actualiza automáticamente el Precio Final de arriba.
+                </p>
+              </div>
+              <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/30">
+                ${precioM2} / m²
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+              <div className="sm:col-span-5 relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 font-bold text-sm pointer-events-none">$</span>
                 <input
                   type="number"
                   min="1"
-                  max="1000"
+                  max="500"
                   step="0.5"
                   value={precioM2}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setPrecioM2(val);
-                    setModoPrecio('porM2');
-                  }}
-                  placeholder="Ej: 45"
-                  className="w-full pl-8 pr-14 py-3 bg-slate-950 border-2 border-emerald-500/80 rounded-2xl text-white font-mono text-lg font-extrabold focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all shadow-inner"
+                  onChange={(e) => handleCambiarPrecioM2(parseFloat(e.target.value) || 0)}
+                  placeholder="45"
+                  className="w-full pl-7 pr-12 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-sm font-bold focus:outline-none focus:border-emerald-400"
                 />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 pointer-events-none">/ m²</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-400 pointer-events-none">/ m²</span>
               </div>
 
-              {/* Slider Rápido de Precio */}
-              <div className="sm:col-span-7 flex flex-col gap-1">
+              <div className="sm:col-span-7">
                 <input
                   type="range"
                   min="15"
                   max="100"
                   step="1"
                   value={precioM2}
-                  onChange={(e) => {
-                    setPrecioM2(parseFloat(e.target.value) || 15);
-                    setModoPrecio('porM2');
-                  }}
-                  className="w-full accent-emerald-400 h-2 bg-slate-800 rounded-lg cursor-pointer"
+                  onChange={(e) => handleCambiarPrecioM2(parseFloat(e.target.value) || 15)}
+                  className="w-full accent-emerald-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                <div className="flex justify-between text-[10px] font-mono text-slate-500">
                   <span>$15/m²</span>
-                  <span className="text-emerald-400 font-bold">Rango Típico Finca Celia ($35 - $60)</span>
+                  <span className="text-emerald-400/80">Rango ($35 - $60)</span>
                   <span>$100/m²</span>
                 </div>
               </div>
             </div>
-
-            {/* Botones de Precios Rápidos */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-[11px] text-slate-400 mr-1">Selección rápida:</span>
-              {[35, 40, 42, 45, 48, 50, 55, 60].map(p => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => {
-                    setPrecioM2(p);
-                    setModoPrecio('porM2');
-                  }}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                    precioM2 === p
-                      ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md ring-2 ring-emerald-300'
-                      : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
-                  }`}
-                >
-                  ${p}/m²
-                </button>
-              ))}
-            </div>
-
-            {/* Cálculo de Multiplicación Instantánea */}
-            <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800/90 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-2 font-mono">
-                <span className="text-slate-300">{medidasTopograficas.areaM2.toLocaleString()} m²</span>
-                <span className="text-emerald-400 font-bold">×</span>
-                <span className="text-emerald-300 font-bold">${precioM2}/m²</span>
-                <span className="text-slate-400">=</span>
-                <span className="text-white font-extrabold text-sm bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-700">
-                  {formatMoneda(precioTotal)}
-                </span>
-              </div>
-              <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1.5">
-                <span>⚡ Cuota mensual a 120m:</span>
-                <strong className="text-white font-mono text-sm bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-600/40">
-                  {formatMoneda(cuotaMensual)}
-                </strong>
-              </div>
-            </div>
           </div>
 
-          {/* Enganche (Prima Inicial) */}
-          <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/60 space-y-2">
-            <div className="flex justify-between text-xs">
-              <label className="text-slate-200 font-semibold">
-                Enganche / Prima Inicial ({enganchePorcentaje}%):
-              </label>
-              <span className="font-mono text-emerald-400 font-bold">
+          {/* ========================================================================= */}
+          {/* ENGANCHE (PRIMA INICIAL) - EN % O EN DÓLARES */}
+          {/* ========================================================================= */}
+          <div className="bg-slate-800/40 p-4.5 rounded-2xl border border-slate-700/60 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <label className="text-slate-200 font-semibold">
+                  Enganche / Prima Inicial:
+                </label>
+                <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-700 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setModoEnganche('porcentaje')}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                      modoEnganche === 'porcentaje'
+                        ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    % Porcentaje
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModoEnganche('monto')}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                      modoEnganche === 'monto'
+                        ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    $ Dólares
+                  </button>
+                </div>
+              </div>
+              <span className="font-mono text-emerald-400 font-extrabold text-sm">
                 {formatMoneda(engancheMonto)}
               </span>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min="5"
-                max="50"
-                step="5"
-                value={enganchePorcentaje}
-                onChange={(e) => setEnganchePorcentaje(parseInt(e.target.value) || 5)}
-                className="flex-1 accent-emerald-500 h-2 bg-slate-700 rounded-lg cursor-pointer"
-              />
-              <span className="w-12 text-center text-xs font-mono font-bold text-white bg-slate-900 py-1 rounded-lg border border-slate-700">
-                {enganchePorcentaje}%
-              </span>
-            </div>
 
-            <div className="flex justify-between text-[11px] text-slate-400 pt-1">
-              <span>Monto a Financiar (Capital Inicial):</span>
-              <strong className="text-white font-mono">{formatMoneda(montoFinanciado)}</strong>
+            {modoEnganche === 'porcentaje' ? (
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="5"
+                  max="50"
+                  step="5"
+                  value={enganchePorcentaje}
+                  onChange={(e) => {
+                    const pct = parseInt(e.target.value) || 5;
+                    setEnganchePorcentaje(pct);
+                    setEngancheManualDolares(Math.round(precioTotal * (pct / 100)));
+                  }}
+                  className="flex-1 accent-emerald-500 h-2 bg-slate-700 rounded-lg cursor-pointer"
+                />
+                <span className="w-14 text-center text-xs font-mono font-bold text-white bg-slate-900 py-1 rounded-lg border border-slate-700">
+                  {enganchePorcentaje}%
+                </span>
+              </div>
+            ) : (
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={precioTotal}
+                  step="100"
+                  value={engancheManualDolares}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setEngancheManualDolares(val);
+                    if (precioTotal > 0) {
+                      setEnganchePorcentaje(Math.round((val / precioTotal) * 100));
+                    }
+                  }}
+                  placeholder="Monto de la prima en USD"
+                  className="w-full pl-7 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-sm font-bold focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+            )}
+
+            <div className="flex justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-700/40">
+              <span>Monto Neto a Financiar a 120 Meses:</span>
+              <strong className="text-white font-mono text-xs bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                {formatMoneda(montoFinanciado)}
+              </strong>
             </div>
           </div>
+
 
           {/* Plazo a 120 Meses y Tasa */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

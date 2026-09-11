@@ -342,12 +342,13 @@ INFORMACIÓN MAESTRA DEL PROYECTO FINCA CELIA:
    - Todos cuentan con plano topográfico pericial y mojones georreferenciados por el Ing. Celso R. Valdivia.
 
 3. PRECIOS Y PLAN FINANCIERO A 120 MESES:
-   - Precio del metro cuadrado: Rango de $35 a $60 por m² ($24.46 a $41.93 por vara cuadrada).
+   - CONTROL DE PRECIOS: Los precios finales de cada terreno son evaluados, fijados y negociados DIRECTAMENTE por Don Ricardo. Los precios por m² ($35 a $60/m²) y totales de catálogo son orientativos. Ricardo define el precio final cerrado para cada comprador.
    - Financiamiento DIRECTO con Ricardo: 100% propio, sin bancos, sin fiador ni buró de crédito.
-   - Plazo estándar: 120 meses (10 años) a cuota fija nivelada.
-   - Prima / Enganche: Desde el 10% (negociable y fraccionable).
+   - Plazo estándar: 120 meses (10 años) a cuota fija nivelada calculada sobre el precio final que Ricardo determine.
+   - Prima / Enganche: Negociable directamente con Ricardo (usualmente desde el 10% o monto en dólares pactado con el cliente).
    - Cero penalizaciones por abonos extraordinarios a capital o liquidación total anticipada.
    - Escrituración garantizada e inmediata al liquidar.
+
 
 4. AGENDAMIENTO DE VISITAS CON MCP GOOGLE (CALENDAR, MEET, GMAIL):
    - Visitas presenciales al terreno: Sábados y Domingos en 3 turnos (9:00 AM, 11:00 AM y 2:00 PM) o entre semana con cita previa.
@@ -519,7 +520,7 @@ Responde siempre en formato JSON estricto según el esquema.`;
   if (esInteresPrecio) {
     return {
       intencion: 'cotizar_lote',
-      respuestaMensaje: `¡Con gusto! En Finca Celia financiamos directamente con Ricardo sin intermediarios bancarios 🌲:\n\n💵 Precio del metro cuadrado: desde $35 hasta $60 por m² ($24.46 a $41.93 por vara cuadrada).\n📅 Plazo: 120 meses (10 años) con cuotas mensuales fijas.\n🤝 Requisitos: Cero trámites de banco, sin récord crediticio ni fiador.\n\nEjemplos de Lotes Disponibles:\n• Lote 01 "El Manantial" (500 m²): $25,000 | Prima $2,500 | Cuota: ~$220/mes\n• Lote 04 "Vista al Valle" (768 m²): $34,560 | Prima $3,450 | Cuota: ~$290/mes\n• Lote 10 "La Cumbre Verde" (600 m²): $27,000 | Prima $2,700 | Cuota: ~$235/mes\n• Lote 15 "Prados de Celia" (1,000 m²): $45,000 | Prima $4,500 | Cuota: ~$380/mes\n\n¿Te gustaría programar una visita este fin de semana o una videollamada por Google Meet?`,
+      respuestaMensaje: `¡Con gusto! En Finca Celia el precio final de cada terreno es definido directamente por Don Ricardo para darte el mejor trato sin bancos 🌲:\n\n⭐ El precio final que Ricardo acuerde contigo determina la cuota fija a 120 meses (10 años).\n💵 Precio referencial por metro cuadrado: entre $35 y $60 por m² ($24.46 a $41.93 por vara cuadrada).\n🤝 Financiamiento 100% directo: sin récord crediticio, sin fiador ni trámites de banco.\n\nPrecios Orientativos de Lotes Disponibles:\n• Lote 01 "El Manantial" (500 m²): $25,000 | Prima $2,500 | Cuota: ~$220/mes\n• Lote 04 "Vista al Valle" (768 m²): $34,560 | Prima $3,450 | Cuota: ~$290/mes\n• Lote 10 "La Cumbre Verde" (600 m²): $27,000 | Prima $2,700 | Cuota: ~$235/mes\n• Lote 15 "Prados de Celia" (1,000 m²): $45,000 | Prima $4,500 | Cuota: ~$380/mes\n\n¿Te gustaría que agendemos una visita con Ricardo este fin de semana o una videollamada por Google Meet para que te dé el precio final de tu lote?`,
       clienteIdentificado: false,
       datosAccion: {
         enlaceGoogleCalendar: generarGoogleCalendarUrl({
@@ -532,6 +533,7 @@ Responde siempre en formato JSON estricto según el esquema.`;
       }
     };
   }
+
 
   // Respuesta general de bienvenida y catálogo
   return {

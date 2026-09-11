@@ -1,10 +1,11 @@
 @echo off
-title Terrenos Ricardo - Quinta Celia Hipotecas
+title Modulo Administrativo Finca Celia Terrenos de Ricardo
 cd /d "%~dp0"
 echo =========================================================
-echo   Iniciando Simulador de Hipotecas Terrenos Ricardo
-echo   Quinta Celia - Control Financiero y Mediciones
+echo   Modulo Administrativo Finca Celia Terrenos de Ricardo
+echo   Finca Celia - Administracion 120 Meses y Mediciones
 echo =========================================================
+
 echo.
 
 if exist "Terrenos Ricardo.html" (

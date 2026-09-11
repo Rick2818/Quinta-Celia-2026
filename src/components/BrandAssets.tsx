@@ -151,16 +151,17 @@ export const QuintaCeliaBanner: React.FC<{
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-800/60 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-3">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Sistema Integral de Lotificación & Créditos Quinta Celia</span>
+            <span>Sistema Integral de Terrenos Finca Celia & Financiamiento 120 Meses</span>
           </div>
           
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-display tracking-tight text-white leading-tight">
-            Simulador de Hipotecas de Terrenos
+            Módulo Administrativo Finca Celia Terrenos de Ricardo
           </h1>
           
           <p className="mt-2 text-slate-300 text-sm sm:text-base leading-relaxed">
-            Gestión completa de compradores, planes de financiamiento con amortización exacta (capital e intereses), control de cuotas mensuales, emisión y despacho de recibos con copia al cliente, y certificación de medidas <span className="text-amber-400 font-semibold font-mono">x1, x2 y y1</span> avaladas por nuestro Agente Topógrafo Senior con más de 20 años de trayectoria.
+            Gestión completa de compradores, control de precios finales fijados por Ricardo, tabla de amortización a 120 meses (capital e intereses), bóveda de documentos legales (DUI, Promesa de Venta y Escritura), emisión de recibos y certificación pericial de medidas <span className="text-amber-400 font-semibold font-mono">x1, x2 y y1</span> avaladas por el Ing. Celso R. Valdivia.
           </p>
+
 
           {/* Badges / Metrics Row */}
           <div className="mt-5 flex flex-wrap items-center gap-3">

@@ -64,6 +64,33 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
   const cuotaMensual = calcularCuotaMensual(montoFinanciado, tasaInteresAnual, plazoMeses);
   const enganchePorcentaje = precioTotal > 0 ? Math.round((enganche / precioTotal) * 100) : 20;
 
+  // Bóveda de Documentos Legales
+  const [docDui, setDocDui] = useState<any>(null);
+  const [docPromesa, setDocPromesa] = useState<any>(null);
+  const [docEscritura, setDocEscritura] = useState<any>(null);
+
+  const handleSubirArchivo = (e: React.ChangeEvent<HTMLInputElement>, tipo: 'dui' | 'promesa' | 'escritura') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const dataUrl = evt.target?.result as string;
+      const nuevoDoc = {
+        id: `doc-${Date.now()}`,
+        tipo: tipo === 'dui' ? 'copia_dui' : tipo === 'promesa' ? 'promesa_venta' : 'escritura_compraventa',
+        nombreArchivo: file.name,
+        tamanoBytes: file.size,
+        tipoMime: file.type,
+        dataUrl,
+        fechaSubida: new Date().toISOString()
+      };
+      if (tipo === 'dui') setDocDui(nuevoDoc);
+      if (tipo === 'promesa') setDocPromesa(nuevoDoc);
+      if (tipo === 'escritura') setDocEscritura(nuevoDoc);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre.trim() || !email.trim()) return;
@@ -88,7 +115,7 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
       medidas: medidasCalculadas,
       topografoValidado: true,
       topografoNombre: 'Ing. Celso R. Valdivia (Topógrafo Senior 24 años exp.)',
-      topografoDictamen: `Medidas definitivas certificadas por el Ing. Celso R. Valdivia: Frente (x1)=${x1}m, Fondo (x2)=${x2}m, Profundidad (y1)=${y1}m. Superficie total: ${medidasCalculadas.areaM2} m² (${medidasCalculadas.varasCuadradas} v²). Mojones replanteados y conformes con el ordenamiento parcelario Quinta Celia.`,
+      topografoDictamen: `Medidas definitivas certificadas por el Ing. Celso R. Valdivia: Frente (x1)=${x1}m, Fondo (x2)=${x2}m, Profundidad (y1)=${y1}m. Superficie total: ${medidasCalculadas.areaM2} m² (${medidasCalculadas.varasCuadradas} v²). Mojones replanteados y conformes con el ordenamiento parcelario Finca Celia.`,
       topografoFecha: new Date().toISOString().split('T')[0],
       precioM2: Math.round(precioTotal / (medidasCalculadas.areaM2 || 1)),
       precioTotal,
@@ -102,7 +129,12 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
       estado: 'activo',
       amortizacion,
       pagos: [],
-      notas: 'Expediente creado en el Simulador Hipotecario Quinta Celia.',
+      notas: 'Expediente creado en el Módulo Administrativo Finca Celia Terrenos de Ricardo.',
+      documentos: {
+        ...(docDui ? { copiaDui: docDui } : {}),
+        ...(docPromesa ? { promesaVenta: docPromesa } : {}),
+        ...(docEscritura ? { escrituraCompraVenta: docEscritura } : {})
+      },
       creadoEn: new Date().toISOString(),
       actualizadoEn: new Date().toISOString()
     };
@@ -110,6 +142,7 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
     onGuardarCliente(nuevoCliente);
     onClose();
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
@@ -384,6 +417,109 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
               <div className="text-right text-[11px] text-slate-300">
                 <span>Capital a Financiar: <strong className="text-white font-mono">{formatMoneda(montoFinanciado)}</strong></span>
                 <span className="block text-[10px] text-slate-400">Se generarán {plazoMeses} cuotas de amortización</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Seccion 4: Bóveda de Documentos Legales */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <span>📁</span>
+                <span>4. Bóveda de Documentos Legales (Opcional o al Contratar)</span>
+              </h4>
+              <span className="text-[10px] text-slate-400">PDFs o fotos de DUI, Promesa y Escritura</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Copia DUI */}
+              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-white flex items-center gap-1">
+                      <span>🪪</span> Copia de DUI
+                    </span>
+                    {docDui ? (
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                        ✓ Adjuntado
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-500">Pendiente</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 line-clamp-1 mb-2">
+                    {docDui ? docDui.nombreArchivo : 'Identificación oficial'}
+                  </p>
+                </div>
+                <label className="cursor-pointer text-center text-xs py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 font-medium transition-colors block border border-slate-700">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => handleSubirArchivo(e, 'dui')}
+                  />
+                  {docDui ? 'Cambiar DUI ↺' : 'Subir Copia DUI +'}
+                </label>
+              </div>
+
+              {/* Promesa de Venta */}
+              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-white flex items-center gap-1">
+                      <span>📝</span> Promesa de Venta
+                    </span>
+                    {docPromesa ? (
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                        ✓ Adjuntado
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-500">Pendiente</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 line-clamp-1 mb-2">
+                    {docPromesa ? docPromesa.nombreArchivo : 'Contrato inicial'}
+                  </p>
+                </div>
+                <label className="cursor-pointer text-center text-xs py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-medium transition-colors block border border-slate-700">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => handleSubirArchivo(e, 'promesa')}
+                  />
+                  {docPromesa ? 'Cambiar Promesa ↺' : 'Subir Promesa +'}
+                </label>
+              </div>
+
+              {/* Escritura de Compra Venta */}
+              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-white flex items-center gap-1">
+                      <span>🏛️</span> Escritura Compraventa
+                    </span>
+                    {docEscritura ? (
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                        ✓ Adjuntado
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-500">Al liquidar</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 line-clamp-1 mb-2">
+                    {docEscritura ? docEscritura.nombreArchivo : 'Copia al finalizar'}
+                  </p>
+                </div>
+                <label className="cursor-pointer text-center text-xs py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 font-medium transition-colors block border border-slate-700">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => handleSubirArchivo(e, 'escritura')}
+                  />
+                  {docEscritura ? 'Cambiar Escritura ↺' : 'Subir Escritura +'}
+                </label>
               </div>
             </div>
           </div>

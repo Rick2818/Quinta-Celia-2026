@@ -85,9 +85,30 @@ export interface ClienteComprador {
   amortizacion: AmortizacionItem[];
   pagos: PagoRealizado[];
   notas: string;
+
+  // Bóveda de Documentos Legales (DUI, Promesa de Venta, Escritura)
+  documentos?: {
+    copiaDui?: DocumentoExpediente;
+    promesaVenta?: DocumentoExpediente;
+    escrituraCompraVenta?: DocumentoExpediente;
+    otros?: DocumentoExpediente[];
+  };
+
   creadoEn: string;
   actualizadoEn: string;
 }
+
+export interface DocumentoExpediente {
+  id: string;
+  tipo: 'copia_dui' | 'promesa_venta' | 'escritura_compraventa' | 'otro';
+  nombreArchivo: string;
+  tamanoBytes?: number;
+  tipoMime?: string; // 'image/jpeg', 'image/png', 'application/pdf', etc.
+  dataUrl?: string; // Base64 Data URL para visualización inmediata offline o enlace en la nube
+  fechaSubida: string;
+  notas?: string;
+}
+
 
 export interface SupabaseSettings {
   url: string;

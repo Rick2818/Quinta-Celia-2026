@@ -15,12 +15,13 @@ function buildSingleHtml() {
   // Change title and meta tags
   htmlContent = htmlContent.replace(
     /<title>.*?<\/title>/i,
-    () => '<title>Terrenos Ricardo - Simulador de Hipotecas Quinta Celia</title>'
+    () => '<title>Módulo Administrativo Finca Celia Terrenos de Ricardo</title>'
   );
   htmlContent = htmlContent.replace(
     /<meta property="og:title" content=".*?" \/>/i,
-    () => '<meta property="og:title" content="Terrenos Ricardo - Simulador de Hipotecas Quinta Celia" />'
+    () => '<meta property="og:title" content="Módulo Administrativo Finca Celia Terrenos de Ricardo" />'
   );
+
 
   // Find JS and CSS bundles in dist/assets
   const assetsDir = path.join(distDir, 'assets');
@@ -63,16 +64,27 @@ function buildSingleHtml() {
     () => `  <script type="text/javascript">\n${safeJsContent}\n  </script>\n</body>`
   );
 
-  // Write single-file standalone Terrenos Ricardo.html in root and dist
+  // Write single-file standalone Terrenos Ricardo.html and Terrenos-Ricardo-120-Meses.html
   const targetRoot = path.resolve('Terrenos Ricardo.html');
+  const targetRoot120 = path.resolve('Terrenos-Ricardo-120-Meses.html');
   const targetDist = path.join(distDir, 'Terrenos Ricardo.html');
+  const targetDist120 = path.join(distDir, 'Terrenos-Ricardo-120-Meses.html');
   const targetDistIndex = path.join(distDir, 'index.html');
+  const publicDir = path.resolve('public');
+  const targetPublic = path.join(publicDir, 'Terrenos Ricardo.html');
+  const targetPublic120 = path.join(publicDir, 'Terrenos-Ricardo-120-Meses.html');
 
   fs.writeFileSync(targetRoot, htmlContent, 'utf-8');
+  fs.writeFileSync(targetRoot120, htmlContent, 'utf-8');
   fs.writeFileSync(targetDist, htmlContent, 'utf-8');
+  fs.writeFileSync(targetDist120, htmlContent, 'utf-8');
   fs.writeFileSync(targetDistIndex, htmlContent, 'utf-8');
+  if (fs.existsSync(publicDir)) {
+    fs.writeFileSync(targetPublic, htmlContent, 'utf-8');
+    fs.writeFileSync(targetPublic120, htmlContent, 'utf-8');
+  }
 
-  console.log('✓ Successfully created pure self-contained "Terrenos Ricardo.html"');
+  console.log('✓ Successfully created pure self-contained "Terrenos Ricardo.html" and "Terrenos-Ricardo-120-Meses.html"');
 }
 
 buildSingleHtml();

@@ -3,6 +3,7 @@ import { ClienteComprador, PagoRealizado, MedidasTerreno } from '../types';
 import { formatMoneda } from '../utils/calculos';
 import { TablaAmortizacion } from './TablaAmortizacion';
 import { VisorTerreno2D } from './VisorTerreno2D';
+import { BovedaDocumentosModal } from './BovedaDocumentosModal';
 
 interface ControlPagosClientesProps {
   clientes: ClienteComprador[];
@@ -13,6 +14,7 @@ interface ControlPagosClientesProps {
   onRegistrarPagoClick: (cliente: ClienteComprador, mes?: number) => void;
   onVerReciboClick: (pago: PagoRealizado, cliente: ClienteComprador) => void;
   onAbrirTopografoConMedidas: (medidas: MedidasTerreno, clienteNombre?: string) => void;
+  onActualizarDocumentos?: (clienteId: string, documentos: NonNullable<ClienteComprador['documentos']>) => void;
   monedaSimbolo?: string;
 }
 
@@ -25,10 +27,18 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
   onRegistrarPagoClick,
   onVerReciboClick,
   onAbrirTopografoConMedidas,
+  onActualizarDocumentos,
   monedaSimbolo = '$'
 }) => {
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'activo' | 'liquidado'>('todos');
+  const [isBovedaOpen, setIsBovedaOpen] = useState(false);
+  const [tipoDocBoveda, setTipoDocBoveda] = useState<'copiaDui' | 'promesaVenta' | 'escrituraCompraVenta'>('copiaDui');
+
+  const handleAbrirBoveda = (tipo: 'copiaDui' | 'promesaVenta' | 'escrituraCompraVenta' = 'copiaDui') => {
+    setTipoDocBoveda(tipo);
+    setIsBovedaOpen(true);
+  };
 
   // Cliente activo
   const clienteActivo = clientes.find(c => c.id === clienteSeleccionadoId) || clientes[0];
@@ -324,6 +334,151 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                 </div>
               </div>
 
+              {/* Bóveda de Documentos Legales del Expediente (DUI, Promesa de Venta, Escritura) */}
+              <div className="bg-slate-900/90 rounded-3xl p-5 border border-slate-800 shadow-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center text-base font-bold">
+                      📁
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-display font-bold text-white flex items-center gap-2">
+                        <span>Bóveda de Documentos Legales</span>
+                        <span className="text-[10px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/20 font-mono font-semibold">
+                          Expediente de Ricardo
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Copia de DUI, Promesa de Venta (120 meses) y Escritura de Compra Venta final
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleAbrirBoveda('copiaDui')}
+                    className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <span>📂</span>
+                    <span>Abrir Bóveda Completa</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Tarjeta DUI */}
+                  <div className="bg-slate-950/70 border border-slate-800/90 hover:border-slate-700 p-3.5 rounded-2xl flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span>🪪</span> Copia de DUI
+                        </span>
+                        {clienteActivo.documentos?.copiaDui ? (
+                          <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                            ✓ Registrado
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-amber-400/80 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                            Pendiente
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-300 line-clamp-1">
+                        {clienteActivo.documentos?.copiaDui?.nombreArchivo || 'Copia de DUI del titular'}
+                      </p>
+                      {clienteActivo.documentos?.copiaDui && (
+                        <p className="text-[9px] text-slate-500 font-mono mt-0.5">
+                          Subido: {new Date(clienteActivo.documentos.copiaDui.fechaSubida).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleAbrirBoveda('copiaDui')}
+                      className={`mt-3 w-full py-1.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center gap-1 ${
+                        clienteActivo.documentos?.copiaDui
+                          ? 'bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30'
+                          : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                      }`}
+                    >
+                      {clienteActivo.documentos?.copiaDui ? '👁️ Ver / Descargar DUI' : '+ Subir Copia DUI'}
+                    </button>
+                  </div>
+
+                  {/* Tarjeta Promesa de Venta */}
+                  <div className="bg-slate-950/70 border border-slate-800/90 hover:border-slate-700 p-3.5 rounded-2xl flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span>📝</span> Promesa de Venta
+                        </span>
+                        {clienteActivo.documentos?.promesaVenta ? (
+                          <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                            ✓ Firmada
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-amber-400/80 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                            Pendiente
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-300 line-clamp-1">
+                        {clienteActivo.documentos?.promesaVenta?.nombreArchivo || 'Contrato 120 meses'}
+                      </p>
+                      {clienteActivo.documentos?.promesaVenta && (
+                        <p className="text-[9px] text-slate-500 font-mono mt-0.5">
+                          Subido: {new Date(clienteActivo.documentos.promesaVenta.fechaSubida).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleAbrirBoveda('promesaVenta')}
+                      className={`mt-3 w-full py-1.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center gap-1 ${
+                        clienteActivo.documentos?.promesaVenta
+                          ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30'
+                          : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                      }`}
+                    >
+                      {clienteActivo.documentos?.promesaVenta ? '👁️ Ver Promesa Venta' : '+ Subir Promesa Venta'}
+                    </button>
+                  </div>
+
+                  {/* Tarjeta Escritura de Compra Venta */}
+                  <div className="bg-slate-950/70 border border-slate-800/90 hover:border-slate-700 p-3.5 rounded-2xl flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span>🏛️</span> Escritura Compraventa
+                        </span>
+                        {clienteActivo.documentos?.escrituraCompraVenta ? (
+                          <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                            ✓ Protocolizada
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-slate-500 bg-slate-800/40 px-2 py-0.5 rounded">
+                            Al liquidar cuotas
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-300 line-clamp-1">
+                        {clienteActivo.documentos?.escrituraCompraVenta?.nombreArchivo || 'Copia final al término de 120 meses'}
+                      </p>
+                      {clienteActivo.documentos?.escrituraCompraVenta && (
+                        <p className="text-[9px] text-slate-500 font-mono mt-0.5">
+                          Subido: {new Date(clienteActivo.documentos.escrituraCompraVenta.fechaSubida).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleAbrirBoveda('escrituraCompraVenta')}
+                      className={`mt-3 w-full py-1.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center gap-1 ${
+                        clienteActivo.documentos?.escrituraCompraVenta
+                          ? 'bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30'
+                          : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                      }`}
+                    >
+                      {clienteActivo.documentos?.escrituraCompraVenta ? '👁️ Ver Escritura Final' : '+ Subir Escritura'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* 2D Mini Visualizer & Topographer Dictamen Preview */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-5 bg-slate-900/90 rounded-3xl p-4 border border-slate-800 shadow-xl">
@@ -400,6 +555,21 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
         </div>
 
       </div>
+
+      {/* Modal Bóveda de Documentos Legales */}
+      {clienteActivo && isBovedaOpen && (
+        <BovedaDocumentosModal
+          isOpen={isBovedaOpen}
+          onClose={() => setIsBovedaOpen(false)}
+          cliente={clienteActivo}
+          tipoDocumentoInicial={tipoDocBoveda}
+          onActualizarDocumentos={(clienteId, docs) => {
+            if (onActualizarDocumentos) {
+              onActualizarDocumentos(clienteId, docs);
+            }
+          }}
+        />
+      )}
 
     </div>
   );
