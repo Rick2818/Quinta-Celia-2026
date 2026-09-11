@@ -34,11 +34,12 @@ import { ExportarEscritorioModal } from './components/ExportarEscritorioModal';
 import { BackupModal } from './components/BackupModal';
 import { BuscarClienteModal } from './components/BuscarClienteModal';
 import { AccesoMovilModal } from './components/AccesoMovilModal';
+import { DashboardReportes } from './components/DashboardReportes';
 
 
 export default function App() {
   // Navigation Tabs
-  const [pestañaActiva, setPestañaActiva] = useState<'simulador' | 'clientes' | 'topografo'>('simulador');
+  const [pestañaActiva, setPestañaActiva] = useState<'simulador' | 'clientes' | 'reportes' | 'topografo'>('simulador');
 
   // Clientes y Almacenamiento
   const [clientes, setClientes] = useState<ClienteComprador[]>(() => {
@@ -311,6 +312,19 @@ export default function App() {
               </button>
 
               <button
+                id="btn-tab-reportes"
+                onClick={() => setPestañaActiva('reportes')}
+                className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                  pestañaActiva === 'reportes'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <span>📈</span>
+                <span>Dashboard & Reportes</span>
+              </button>
+
+              <button
                 id="btn-tab-topografo"
                 onClick={() => {
                   setTopografoClienteNombre(undefined);
@@ -434,6 +448,27 @@ export default function App() {
             onAbrirTopografoConMedidas={handleAbrirTopografoDesdeMedidas}
             onActualizarDocumentos={handleActualizarDocumentosCliente}
             monedaSimbolo={configSistema.monedaSimbolo}
+          />
+        )}
+
+        {pestañaActiva === 'reportes' && (
+          <DashboardReportes
+            clientes={clientes}
+            monedaSimbolo={configSistema.monedaSimbolo}
+            onVerCliente={(id) => {
+              setClienteSeleccionadoId(id);
+              setPestañaActiva('clientes');
+            }}
+            onVerRecibo={(pago, cliente) => {
+              setPagoParaRecibo(pago);
+              setClienteParaRecibo(cliente);
+              setIsReciboOpen(true);
+            }}
+            onRegistrarPago={(cliente) => {
+              setClienteParaPago(cliente);
+              setMesParaPago(undefined);
+              setIsRegistroPagoOpen(true);
+            }}
           />
         )}
 
