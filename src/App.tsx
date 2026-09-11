@@ -372,31 +372,6 @@ export default function App() {
               </button>
 
               <button
-                id="btn-guardar-escritorio"
-                onClick={() => setIsExportarEscritorioOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-                title="Descargar Terrenos Ricardo.html para Windows"
-              >
-                <span>💾</span>
-                <span className="hidden sm:inline">Guardar en Escritorio</span>
-                <span className="sm:hidden">Escritorio</span>
-              </button>
-
-              <button
-                onClick={() => setIsSupabaseOpen(true)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
-                  supabaseConfig.conectado
-                    ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
-                    : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
-                }`}
-                title="Configuración de base de datos Supabase"
-              >
-                <span className={`w-2 h-2 rounded-full ${supabaseConfig.conectado ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
-                <span className="hidden md:inline">{supabaseConfig.conectado ? 'Supabase Conectado' : 'Configurar Supabase'}</span>
-                <span className="md:hidden">Supabase</span>
-              </button>
-
-              <button
                 onClick={() => {
                   setDatosSimulacionPrellenados(null);
                   setIsNuevoClienteOpen(true);
