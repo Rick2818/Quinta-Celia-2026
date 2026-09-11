@@ -74,17 +74,23 @@ function buildSingleHtml() {
   const targetPublic = path.join(publicDir, 'Terrenos Ricardo.html');
   const targetPublic120 = path.join(publicDir, 'Terrenos-Ricardo-120-Meses.html');
 
+  const targetDist404 = path.join(distDir, '404.html');
+  const targetDistNoJekyll = path.join(distDir, '.nojekyll');
+
   fs.writeFileSync(targetRoot, htmlContent, 'utf-8');
   fs.writeFileSync(targetRoot120, htmlContent, 'utf-8');
   fs.writeFileSync(targetDist, htmlContent, 'utf-8');
   fs.writeFileSync(targetDist120, htmlContent, 'utf-8');
   fs.writeFileSync(targetDistIndex, htmlContent, 'utf-8');
+  fs.writeFileSync(targetDist404, htmlContent, 'utf-8');
+  fs.writeFileSync(targetDistNoJekyll, '# Disable Jekyll', 'utf-8');
+
   if (fs.existsSync(publicDir)) {
     fs.writeFileSync(targetPublic, htmlContent, 'utf-8');
     fs.writeFileSync(targetPublic120, htmlContent, 'utf-8');
   }
 
-  console.log('✓ Successfully created pure self-contained "Terrenos Ricardo.html" and "Terrenos-Ricardo-120-Meses.html"');
+  console.log('✓ Successfully created pure self-contained "Terrenos Ricardo.html", "Terrenos-Ricardo-120-Meses.html", and GitHub Pages "404.html" & ".nojekyll"');
 }
 
 buildSingleHtml();

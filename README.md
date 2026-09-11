@@ -60,11 +60,34 @@ Integración mediante el protocolo abierto **Model Context Protocol (MCP)** con 
 
 ---
 
-### 4. 💵 Módulo Administrativo: Precio del Metro Cuadrado ($/m²)
-- **Campo Dedicado:** Panel interactivo para definir el **Precio del Metro Cuadrado ($/m²)**.
+### 4. 📁 Bóveda de Documentos Legales del Cliente
+Módulo de expediente documental integrado en el registro de clientes y en su ficha individual:
+- **🪪 Copia de DUI:** Carga digital optimizada del Documento Único de Identidad salvadoreño.
+- **📝 Copia de Promesa de Venta:** Respaldo del contrato firmado para el plan de 120 meses.
+- **🏛️ Copia de la Escritura de Compra Venta:** Espacio para la escritura matriz protocolizada al liquidar o finalizar el período.
+- **Compresión Inteligente Automática:** El sistema optimiza imágenes pesadas y fotos de celular en el cliente mediante Canvas off-screen, reduciendo el peso de 8MB a ~250KB para evitar cuellos de botella y saturación de memoria.
+
+---
+
+### 5. 🛡️ Auditoría Full Stack, Seguridad SSL/HTTPS & Prevención de Crashes
+Arquitectura blindada contra caídas y vulnerabilidades:
+- **Cifrado SSL / HTTPS Obligatorio:**
+  - `Strict-Transport-Security` (HSTS): Fuerza el uso exclusivo de HTTPS por 365 días en navegadores.
+  - `Content-Security-Policy` (`upgrade-insecure-requests`): Actualiza automáticamente cualquier solicitud HTTP a HTTPS seguro en navegadores móviles.
+  - Detección de Proxy (`trust proxy`, `x-forwarded-proto`) con redirección 301 a HTTPS.
+  - Protección activa contra clickjacking (`X-Frame-Options: SAMEORIGIN`), MIME-sniffing (`X-Content-Type-Options: nosniff`) y mitigación XSS.
+- **Prevención de Crashes (Zero-Crash Policy):**
+  - **Serializador Resiliente:** Manejo seguro de `QuotaExceededError` en `localStorage`. Si el almacenamiento local del dispositivo se satura, el sistema conserva los metadatos y la sesión sin arrojar excepciones ni congelar la aplicación.
+  - **React 19 Error Boundary:** Contenedor de seguridad que intercepta excepciones en componentes hijos y ofrece recuperación en 1 clic ("Reintentar Vista") en lugar de mostrar pantalla en blanco.
+  - **Despliegue Estable en GitHub Pages:** Incorporación de archivo `.nojekyll` y fallback `404.html` para garantizar navegación SPA sin errores 404 al recargar o compartir enlaces directos.
+
+---
+
+### 6. 💵 Módulo Administrativo: Precio Final Fijado por Ricardo y $/m²
+- **Precio Final Maestro:** Ricardo puede fijar directamente el precio total del terreno ($15,000, $25,000, etc.), siendo el conductor primario de todos los cálculos.
+- **Panel Dinámico:** Muestra el precio por metro cuadrado ($/m²) y vara cuadrada ($/v²).
 - **Fórmula en Tiempo Real:**  
   $$\text{Precio Total} = \text{Área } (\text{m}^2) \times \text{Precio por } \text{m}^2$$
-- Muestra el precio equivalente por vara cuadrada ($/v²).
 - **Tabla de Amortización Dinámica a 120 Meses:**
   - 120 cuotas consecutivas con desglose de Pago Mensual, Abono a Capital, Intereses y Saldo Insoluto.
   - Buscador rápido por mes (ej. ver mes 12, 60 o 120).
@@ -72,9 +95,9 @@ Integración mediante el protocolo abierto **Model Context Protocol (MCP)** con 
 
 ---
 
-### 5. ☁️ Arquitectura de Base de Datos en Supabase (Nube 24/7)
+### 7. ☁️ Arquitectura de Base de Datos en Supabase (Nube 24/7)
 Base de datos PostgreSQL en la nube con Row Level Security (RLS) verificado:
-1. `clientes_quinta_celia`: Expedientes de compradores, datos de identificación, lote asignado, financiamiento y topografía pericial.
+1. `clientes_quinta_celia`: Expedientes de compradores, documentos legales (DUI, Promesa, Escritura), lote asignado, financiamiento y topografía pericial.
 2. `pagos_quinta_celia`: Recibos oficiales numerados, abonos a capital, intereses y saldos actualizados.
 3. `inventario_lotes`: Lotes disponibles, apartados y vendidos con cotas y características.
 4. `prospectos_leads`: Registro de prospectos captados por WhatsApp, Facebook o visitas de campo.

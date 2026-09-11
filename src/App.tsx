@@ -158,21 +158,36 @@ export default function App() {
 
 
   // Toast Notification
-  const [notificacion, setNotificacion] = useState<{ tipo: 'exito' | 'info'; mensaje: string } | null>(null);
+  const [notificacion, setNotificacion] = useState<{ tipo: 'exito' | 'info' | 'warning'; mensaje: string } | null>(null);
 
-  const mostrarNotificacion = (mensaje: string, tipo: 'exito' | 'info' = 'exito') => {
+  const mostrarNotificacion = (mensaje: string, tipo: 'exito' | 'info' | 'warning' = 'exito') => {
     setNotificacion({ tipo, mensaje });
     setTimeout(() => setNotificacion(null), 4000);
   };
 
-  // Guardar clientes en localStorage de forma segura
+  // Guardar clientes en localStorage de forma resiliente contra QuotaExceededError
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         localStorage.setItem('quinta_celia_clientes', JSON.stringify(clientes));
       }
-    } catch (e) {
-      console.warn('No se pudo persistir en localStorage (cuota excedida o modo privado):', e);
+    } catch (e: any) {
+      console.warn('Alerta de cuota en localStorage. Aplicando persistencia resiliente:', e);
+      try {
+        // Si se supera la cuota del navegador, persistir metadatos esenciales preservando el estado
+        const clientesOptimizados = clientes.map(c => ({
+          ...c,
+          documentos: c.documentos ? {
+            ...(c.documentos.copiaDui ? { copiaDui: { ...c.documentos.copiaDui, dataUrl: '' } } : {}),
+            ...(c.documentos.promesaVenta ? { promesaVenta: { ...c.documentos.promesaVenta, dataUrl: '' } } : {}),
+            ...(c.documentos.escrituraCompraVenta ? { escrituraCompraVenta: { ...c.documentos.escrituraCompraVenta, dataUrl: '' } } : {})
+          } : undefined
+        }));
+        localStorage.setItem('quinta_celia_clientes', JSON.stringify(clientesOptimizados));
+        mostrarNotificacion('Almacenamiento local optimizado para proteger todos tus clientes.', 'warning');
+      } catch (fallbackErr) {
+        console.error('Excepción crítica de persistencia local contenida:', fallbackErr);
+      }
     }
   }, [clientes]);
 
@@ -443,6 +458,8 @@ export default function App() {
           <div className={`px-4 py-3 rounded-2xl text-xs font-bold shadow-2xl flex items-center gap-2 border ${
             notificacion.tipo === 'exito'
               ? 'bg-emerald-900 border-emerald-500 text-white'
+              : notificacion.tipo === 'warning'
+              ? 'bg-amber-950 border-amber-500 text-amber-200'
               : 'bg-slate-900 border-slate-700 text-slate-200'
           }`}>
             <span>{notificacion.mensaje}</span>

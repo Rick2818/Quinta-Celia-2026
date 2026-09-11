@@ -20,19 +20,39 @@ process.on('unhandledRejection', (reason, promise) => {
 const app = express();
 const PORT = 3000;
 
-// Security: limit payload size to prevent payload injection / memory exhaustion
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Configurar trust proxy para detectar SSL detrás de balanceadores (Cloudflare, Nginx, Railway, Render)
+app.set('trust proxy', 1);
 
-// Security Headers Middleware
+// Redirección obligatoria a HTTPS en producción
 app.use((req, res, next) => {
-  // Prevent MIME type sniffing
+  const isProduction = process.env.NODE_ENV === 'production';
+  const proto = req.headers['x-forwarded-proto'];
+
+  if (isProduction && proto && proto !== 'https') {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
+// Security: limit payload size to prevent memory exhaustion
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Security Headers Middleware (SSL/TLS & Defense-in-Depth)
+app.use((req, res, next) => {
+  // Strict-Transport-Security (HSTS): obliga a los navegadores a conectarse solo por HTTPS por 1 año
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  // Content-Security-Policy: fuerza actualización automática de cualquier recurso HTTP a HTTPS
+  res.setHeader('Content-Security-Policy', "upgrade-insecure-requests; default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self';");
+  // Prevenir clickjacking
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  // Prevenir MIME type sniffing
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  // XSS protection for older browsers
+  // XSS protection para compatibilidad con navegadores legados
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  // Referrer Policy
+  // Referrer Policy estricta
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // Remove Express fingerprint
+  // Prevenir fugas de información sobre la pila de software
   res.removeHeader('X-Powered-By');
   next();
 });

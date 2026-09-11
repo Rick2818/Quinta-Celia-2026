@@ -6,6 +6,7 @@ import {
   generarTablaAmortizacion, 
   formatMoneda 
 } from '../utils/calculos';
+import { optimizarArchivoDocumento } from '../utils/fileCompressor';
 
 interface NuevoCompradorModalProps {
   isOpen: boolean;
@@ -15,15 +16,13 @@ interface NuevoCompradorModalProps {
     precioM2?: number;
     precioTotal?: number;
     enganche?: number;
-    enganchePorcentaje?: number;
-    montoFinanciado?: number;
     plazoMeses?: number;
     tasaInteresAnual?: number;
-    cuotaMensual?: number;
-    loteSugerido?: string;
-  };
+    loteNombre?: string;
+    loteNumero?: string;
+  } | null;
   onGuardarCliente: (cliente: ClienteComprador) => void;
-  onAbrirTopografo: () => void;
+  onAbrirTopografo?: () => void;
 }
 
 export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
@@ -35,18 +34,16 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  // Datos personales solicitados específicamente en el prompt
+  // Estado del formulario
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [direccion, setDireccion] = useState('');
+  const [direccion, setDireccion] = useState('Valle de Zapotitán / Coatepeque');
   const [cedula, setCedula] = useState('');
-
-  // Lote e Inmueble
-  const [loteNombre, setLoteNombre] = useState(datosIniciales?.loteSugerido || 'Lote Quinta Celia');
-  const [loteNumero, setLoteNumero] = useState('15');
-
-  // Medidas topográficas x1, x2, y1
+  const [loteNombre, setLoteNombre] = useState(datosIniciales?.loteNombre || 'Lote Campestre Quinta Celia');
+  const [loteNumero, setLoteNumero] = useState(datosIniciales?.loteNumero || '01');
+  
+  // Medidas del terreno
   const [x1, setX1] = useState<number>(datosIniciales?.medidas?.x1 || 20);
   const [x2, setX2] = useState<number>(datosIniciales?.medidas?.x2 || 20);
   const [y1, setY1] = useState<number>(datosIniciales?.medidas?.y1 || 30);
@@ -68,27 +65,39 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
   const [docDui, setDocDui] = useState<any>(null);
   const [docPromesa, setDocPromesa] = useState<any>(null);
   const [docEscritura, setDocEscritura] = useState<any>(null);
+  const [procesandoArchivo, setProcesandoArchivo] = useState<string | null>(null);
+  const [errorArchivo, setErrorArchivo] = useState<string | null>(null);
 
-  const handleSubirArchivo = (e: React.ChangeEvent<HTMLInputElement>, tipo: 'dui' | 'promesa' | 'escritura') => {
+  const handleSubirArchivo = async (e: React.ChangeEvent<HTMLInputElement>, tipo: 'dui' | 'promesa' | 'escritura') => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const dataUrl = evt.target?.result as string;
+
+    setErrorArchivo(null);
+    setProcesandoArchivo(tipo);
+
+    try {
+      // Compresión inteligente en el navegador para evitar saturación de memoria
+      const optimizado = await optimizarArchivoDocumento(file);
+
       const nuevoDoc = {
         id: `doc-${Date.now()}`,
         tipo: tipo === 'dui' ? 'copia_dui' : tipo === 'promesa' ? 'promesa_venta' : 'escritura_compraventa',
-        nombreArchivo: file.name,
-        tamanoBytes: file.size,
-        tipoMime: file.type,
-        dataUrl,
+        nombreArchivo: optimizado.nombreArchivo,
+        tamanoBytes: optimizado.tamanoBytes,
+        tipoMime: optimizado.tipoMime,
+        dataUrl: optimizado.dataUrl,
         fechaSubida: new Date().toISOString()
       };
       if (tipo === 'dui') setDocDui(nuevoDoc);
       if (tipo === 'promesa') setDocPromesa(nuevoDoc);
       if (tipo === 'escritura') setDocEscritura(nuevoDoc);
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Error optimizando archivo en modal:', err);
+      setErrorArchivo(err?.message || 'Error al procesar el archivo.');
+    } finally {
+      setProcesandoArchivo(null);
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -430,6 +439,28 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
               </h4>
               <span className="text-[10px] text-slate-400">PDFs o fotos de DUI, Promesa y Escritura</span>
             </div>
+
+            {/* Alerta de procesamiento */}
+            {procesandoArchivo && (
+              <div className="p-2.5 bg-sky-950/60 border border-sky-500/40 rounded-xl flex items-center gap-2 text-xs text-sky-300 animate-pulse">
+                <span className="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin shrink-0"></span>
+                <span>Optimizando documento para evitar consumo de memoria...</span>
+              </div>
+            )}
+
+            {/* Alerta de error */}
+            {errorArchivo && (
+              <div className="p-2.5 bg-rose-950/60 border border-rose-500/40 rounded-xl flex items-center justify-between text-xs text-rose-300">
+                <span>⚠️ {errorArchivo}</span>
+                <button
+                  type="button"
+                  onClick={() => setErrorArchivo(null)}
+                  className="text-rose-400 hover:text-white font-bold ml-2 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Copia DUI */}

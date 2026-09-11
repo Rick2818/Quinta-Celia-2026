@@ -1,5 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { DocumentoExpediente, ClienteComprador } from '../types';
+import { optimizarArchivoDocumento } from '../utils/fileCompressor';
 
 interface BovedaDocumentosModalProps {
   isOpen: boolean;
@@ -23,23 +24,29 @@ export const BovedaDocumentosModal: React.FC<BovedaDocumentosModalProps> = ({
     cliente.documentos || {}
   );
   const [vistaPreviaDoc, setVistaPreviaDoc] = useState<DocumentoExpediente | null>(null);
+  const [procesandoArchivo, setProcesandoArchivo] = useState<boolean>(false);
+  const [mensajeError, setMensajeError] = useState<string | null>(null);
 
   const docActual = documentosLocales[tipoActivo];
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, tipo: 'copiaDui' | 'promesaVenta' | 'escrituraCompraVenta') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, tipo: 'copiaDui' | 'promesaVenta' | 'escrituraCompraVenta') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
+    setMensajeError(null);
+    setProcesandoArchivo(true);
+
+    try {
+      // Optimización inteligente en cliente para prevenir QuotaExceededError
+      const optimizado = await optimizarArchivoDocumento(file);
+
       const nuevoDoc: DocumentoExpediente = {
         id: `doc-${Date.now()}`,
         tipo: tipo === 'copiaDui' ? 'copia_dui' : tipo === 'promesaVenta' ? 'promesa_venta' : 'escritura_compraventa',
-        nombreArchivo: file.name,
-        tamanoBytes: file.size,
-        tipoMime: file.type,
-        dataUrl,
+        nombreArchivo: optimizado.nombreArchivo,
+        tamanoBytes: optimizado.tamanoBytes,
+        tipoMime: optimizado.tipoMime,
+        dataUrl: optimizado.dataUrl,
         fechaSubida: new Date().toISOString()
       };
 
@@ -50,9 +57,14 @@ export const BovedaDocumentosModal: React.FC<BovedaDocumentosModalProps> = ({
 
       setDocumentosLocales(docsActualizados);
       onActualizarDocumentos(cliente.id, docsActualizados);
-    };
-
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Error procesando archivo:', err);
+      setMensajeError(err?.message || 'Error al procesar el archivo seleccionado.');
+    } finally {
+      setProcesandoArchivo(false);
+      // Limpiar input file para permitir seleccionar el mismo archivo si fuese necesario
+      e.target.value = '';
+    }
   };
 
   const handleEliminarDocumento = (tipo: 'copiaDui' | 'promesaVenta' | 'escrituraCompraVenta') => {
@@ -194,15 +206,40 @@ export const BovedaDocumentosModal: React.FC<BovedaDocumentosModalProps> = ({
               {/* Botón de Cargar / Reemplazar */}
               <label className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all shrink-0">
                 <span>📁</span>
-                <span>{docActual ? 'Reemplazar Archivo' : 'Subir Documento'}</span>
+                <span>{procesandoArchivo ? 'Optimizando...' : docActual ? 'Reemplazar Archivo' : 'Subir Documento'}</span>
                 <input
                   type="file"
                   accept="image/*,application/pdf"
+                  disabled={procesandoArchivo}
                   onChange={(e) => handleFileUpload(e, tipoActivo)}
                   className="hidden"
                 />
               </label>
             </div>
+
+            {/* Indicador de optimización / procesamiento */}
+            {procesandoArchivo && (
+              <div className="p-3 bg-sky-950/60 border border-sky-500/40 rounded-2xl flex items-center gap-3 animate-pulse">
+                <span className="w-5 h-5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin shrink-0"></span>
+                <span className="text-xs text-sky-300 font-semibold">
+                  Optimizando y comprimiendo documento para almacenamiento seguro...
+                </span>
+              </div>
+            )}
+
+            {/* Alerta de Error */}
+            {mensajeError && (
+              <div className="p-3 bg-rose-950/60 border border-rose-500/40 rounded-2xl flex items-center justify-between text-xs text-rose-300">
+                <span>⚠️ {mensajeError}</span>
+                <button
+                  type="button"
+                  onClick={() => setMensajeError(null)}
+                  className="text-rose-400 hover:text-white font-bold ml-2 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {/* Si ya hay documento cargado */}
             {docActual ? (
