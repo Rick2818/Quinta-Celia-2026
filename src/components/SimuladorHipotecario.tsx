@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MedidasTerreno } from '../types';
 import { 
   calcularCuotaMensual, 
-  calcularMedidasTerreno, 
   formatMoneda, 
   generarTablaAmortizacion 
 } from '../utils/calculos';
@@ -30,25 +29,29 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
   onAbrirTopografo,
   onCrearClienteConSimulacion
 }) => {
-  // Lotes preconfigurados Quinta Celia
-  const PRESETS_QUINTA_CELIA = [
+  // Lotes preconfigurados Finca Celia
+  const PRESETS_FINCA_CELIA = [
     { nombre: 'Lote El Manantial (500 m²)', x1: 20, x2: 20, y1: 25, precioM2: 45 },
     { nombre: 'Lote Vista al Valle (667 m²)', x1: 20, x2: 24.5, y1: 30, precioM2: 48 },
     { nombre: 'Macrolote Campestre (1,000 m²)', x1: 25, x2: 25, y1: 40, precioM2: 42 },
     { nombre: 'Lote Premium Mirador (1,500 m²)', x1: 30, x2: 35, y1: 46.15, precioM2: 52 },
   ];
 
-  const [nombreLote, setNombreLote] = useState('Lote Campestre Quinta Celia');
+  const [nombreLote, setNombreLote] = useState('Lote Campestre Finca Celia');
   const [modoPrecio, setModoPrecio] = useState<'porM2' | 'total'>('porM2');
   const [precioM2, setPrecioM2] = useState<number>(45);
   const [precioTotalManual, setPrecioTotalManual] = useState<number>(30000);
 
-  // Parámetros de hipoteca
+  // Parámetros de hipoteca (Preconfigurado a 120 meses)
   const [enganchePorcentaje, setEnganchePorcentaje] = useState<number>(20);
   const [plazoMeses, setPlazoMeses] = useState<number>(120);
   const [tasaInteresAnual, setTasaInteresAnual] = useState<number>(9.5);
 
-  // Calcular precio total dinámico
+  // Visor interactivo de la tabla de 120 meses
+  const [mostrarTabla120, setMostrarTabla120] = useState<boolean>(true);
+  const [busquedaMes120, setBusquedaMes120] = useState<string>('');
+
+  // Calcular precio total dinámico basado en el Precio del Metro Cuadrado
   const precioTotal = modoPrecio === 'porM2'
     ? Math.round(medidasTopograficas.areaM2 * precioM2)
     : precioTotalManual;
@@ -63,10 +66,53 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
   const porcentajeCapital = totalPagar > 0 ? Math.round((montoFinanciado / totalPagar) * 100) : 100;
   const porcentajeInteres = 100 - porcentajeCapital;
 
-  const handleSeleccionarPreset = (preset: typeof PRESETS_QUINTA_CELIA[0]) => {
+  // Generación dinámica de la tabla de amortización para 120 meses
+  const tablaAmortizacion120 = generarTablaAmortizacion(
+    montoFinanciado,
+    tasaInteresAnual,
+    plazoMeses,
+    new Date().toISOString().split('T')[0]
+  );
+
+  const cuotasFiltradas120 = busquedaMes120.trim()
+    ? tablaAmortizacion120.filter(c => c.mes.toString().includes(busquedaMes120.trim()))
+    : tablaAmortizacion120;
+
+  const handleSeleccionarPreset = (preset: typeof PRESETS_FINCA_CELIA[0]) => {
     setNombreLote(preset.nombre);
     setPrecioM2(preset.precioM2);
     setModoPrecio('porM2');
+  };
+
+  const handleDescargarAmortizacionCSV = () => {
+    const encabezados = [
+      'Mes',
+      'Fecha Vencimiento',
+      'Saldo Inicial ($)',
+      'Cuota Fija ($)',
+      'Abono Capital ($)',
+      'Abono Interes ($)',
+      'Saldo Restante ($)'
+    ];
+    const filas = tablaAmortizacion120.map(c => [
+      c.mes,
+      `"${c.fechaVencimiento}"`,
+      c.saldoInicial,
+      c.cuota,
+      c.capital,
+      c.interes,
+      c.saldoFinal
+    ].join(';'));
+    const csvCompleto = '\uFEFF' + [encabezados.join(';'), ...filas].join('\r\n');
+    const blob = new Blob([csvCompleto], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `amortizacion_120_meses_${nombreLote.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleProcederCreacion = () => {
@@ -87,15 +133,21 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* Top Banner with Presets */}
-      <div className="bg-slate-900/90 rounded-3xl p-5 sm:p-6 border border-slate-800 shadow-xl">
+      {/* Encabezado Oficial */}
+      <div className="bg-slate-900/95 rounded-3xl p-5 sm:p-6 border border-slate-800 shadow-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 mb-4 border-b border-slate-800 gap-3">
           <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/40">
+                PLAN 120 MESES
+              </span>
+              <span className="text-xs font-mono text-slate-400">Amortización Francesa Nivelada</span>
+            </div>
             <h2 className="text-xl sm:text-2xl font-display font-extrabold text-white">
-              Cotizador de Terrenos y Cuotas
+              Módulo Administrativo Finca Celia Terrenos de Ricardo
             </h2>
             <p className="text-xs text-slate-400">
-              Configura el plan de financiamiento exacto con amortización francesa para lotes de Quinta Celia
+              Cálculo de Terrenos, Precio por Metro Cuadrado y Tabla de Amortización a 120 Meses
             </p>
           </div>
 
@@ -108,13 +160,13 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
           </button>
         </div>
 
-        {/* Presets Row */}
+        {/* Lotes Preconfigurados */}
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block mb-2">
-            Lotes Típicos en Promoción:
+            Lotes Típicos de Finca Celia:
           </span>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-            {PRESETS_QUINTA_CELIA.map((p, idx) => (
+            {PRESETS_FINCA_CELIA.map((p, idx) => (
               <button
                 key={idx}
                 type="button"
@@ -124,9 +176,9 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
                 <span className="text-xs font-bold text-white group-hover:text-emerald-300 block truncate">
                   {p.nombre}
                 </span>
-                <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
-                  <span>${p.precioM2}/m²</span>
-                  <span className="text-amber-400">{p.x1}m × {p.y1}m</span>
+                <div className="flex justify-between items-center mt-1 text-[11px]">
+                  <span className="text-slate-400 font-mono">${p.precioM2}/m²</span>
+                  <span className="text-emerald-400 font-bold font-mono">120m</span>
                 </div>
               </button>
             ))}
@@ -134,15 +186,15 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
         </div>
       </div>
 
-      {/* Main Grid: Inputs vs Real-Time Results & Mini Plotter */}
+      {/* Main Grid: Inputs vs Resultados */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left Col: Financing Inputs (7 cols) */}
+        {/* Left Col: Parámetros y PRECIO DEL METRO CUADRADO (7 cols) */}
         <div className="lg:col-span-7 bg-slate-900/90 rounded-3xl p-6 border border-slate-800 shadow-xl space-y-5">
           
           <h3 className="text-base font-display font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-            Parámetros del Financiamiento Hipotecario
+            Parámetros del Terreno y Financiamiento
           </h3>
 
           {/* Nombre Lote */}
@@ -158,59 +210,110 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
             />
           </div>
 
-          {/* Modalidad de Precio */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <label className="text-slate-300 font-semibold">Precio por Metro Cuadrado (m²):</label>
-                <span className="font-mono text-emerald-400 font-bold">${precioM2} / m²</span>
+          {/* ========================================================================= */}
+          {/* ESPACIO DESTACADO EXCLUSIVO: PRECIO DEL METRO CUADRADO */}
+          {/* ========================================================================= */}
+          <div className="bg-gradient-to-br from-emerald-950/80 via-slate-900 to-slate-950 border-2 border-emerald-500/70 rounded-3xl p-5 shadow-2xl space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-900/60 pb-3">
+              <div>
+                <label className="text-sm sm:text-base font-display font-extrabold text-white flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Precio del Metro Cuadrado ($ / m²)
+                </label>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Este número actualiza en tiempo real el precio total del terreno y la tabla de amortización a 120 meses.
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min="20"
-                  max="120"
-                  step="1"
-                  value={precioM2}
-                  onChange={(e) => {
-                    setPrecioM2(parseFloat(e.target.value) || 20);
-                    setModoPrecio('porM2');
-                  }}
-                  className="flex-1 accent-emerald-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
-                />
+              <div className="flex items-center gap-1.5 self-start sm:self-center">
+                <span className="text-xs text-slate-400 font-semibold">Valor fijado:</span>
+                <span className="font-mono text-base font-extrabold text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-xl border border-emerald-500/40">
+                  ${precioM2} / m²
+                </span>
+              </div>
+            </div>
+
+            {/* Input Numérico Principal */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+              <div className="sm:col-span-5 relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 font-bold text-lg pointer-events-none">$</span>
                 <input
                   type="number"
                   min="1"
+                  max="1000"
+                  step="0.5"
                   value={precioM2}
                   onChange={(e) => {
-                    setPrecioM2(parseFloat(e.target.value) || 1);
+                    const val = parseFloat(e.target.value) || 0;
+                    setPrecioM2(val);
                     setModoPrecio('porM2');
                   }}
-                  className="w-20 px-2 py-1 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-xs text-right"
+                  placeholder="Ej: 45"
+                  className="w-full pl-8 pr-14 py-3 bg-slate-950 border-2 border-emerald-500/80 rounded-2xl text-white font-mono text-lg font-extrabold focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all shadow-inner"
                 />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 pointer-events-none">/ m²</span>
               </div>
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Calculado sobre {medidasTopograficas.areaM2.toLocaleString()} m² avalados
-              </span>
+
+              {/* Slider Rápido de Precio */}
+              <div className="sm:col-span-7 flex flex-col gap-1">
+                <input
+                  type="range"
+                  min="15"
+                  max="100"
+                  step="1"
+                  value={precioM2}
+                  onChange={(e) => {
+                    setPrecioM2(parseFloat(e.target.value) || 15);
+                    setModoPrecio('porM2');
+                  }}
+                  className="w-full accent-emerald-400 h-2 bg-slate-800 rounded-lg cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                  <span>$15/m²</span>
+                  <span className="text-emerald-400 font-bold">Rango Típico Finca Celia ($35 - $60)</span>
+                  <span>$100/m²</span>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <label className="text-slate-300 font-semibold">Precio Total del Terreno:</label>
-                <span className="font-mono text-white font-bold">{formatMoneda(precioTotal)}</span>
+            {/* Botones de Precios Rápidos */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] text-slate-400 mr-1">Selección rápida:</span>
+              {[35, 40, 42, 45, 48, 50, 55, 60].map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => {
+                    setPrecioM2(p);
+                    setModoPrecio('porM2');
+                  }}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                    precioM2 === p
+                      ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md ring-2 ring-emerald-300'
+                      : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  ${p}/m²
+                </button>
+              ))}
+            </div>
+
+            {/* Cálculo de Multiplicación Instantánea */}
+            <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800/90 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 font-mono">
+                <span className="text-slate-300">{medidasTopograficas.areaM2.toLocaleString()} m²</span>
+                <span className="text-emerald-400 font-bold">×</span>
+                <span className="text-emerald-300 font-bold">${precioM2}/m²</span>
+                <span className="text-slate-400">=</span>
+                <span className="text-white font-extrabold text-sm bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-700">
+                  {formatMoneda(precioTotal)}
+                </span>
               </div>
-              <input
-                type="number"
-                value={precioTotal}
-                onChange={(e) => {
-                  setPrecioTotalManual(parseFloat(e.target.value) || 0);
-                  setModoPrecio('total');
-                }}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Modifica directamente o ajusta el $/m²
-              </span>
+              <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1.5">
+                <span>⚡ Cuota mensual a 120m:</span>
+                <strong className="text-white font-mono text-sm bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-600/40">
+                  {formatMoneda(cuotaMensual)}
+                </strong>
+              </div>
             </div>
           </div>
 
@@ -246,27 +349,17 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
             </div>
           </div>
 
-          {/* Plazo y Tasa de Interés */}
+          {/* Plazo a 120 Meses y Tasa */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-            {/* Plazo en meses */}
             <div>
               <div className="flex justify-between items-center text-xs mb-1.5">
                 <label className="text-slate-300 font-semibold flex items-center gap-1.5">
                   <span>Plazo de Amortización:</span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30">Hasta 120m</span>
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30">
+                    120 Meses Fijo
+                  </span>
                 </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min="1"
-                    max="180"
-                    value={plazoMeses}
-                    onChange={(e) => setPlazoMeses(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-14 bg-slate-950 border border-amber-500/50 rounded-lg px-1.5 py-0.5 text-right font-mono text-amber-300 font-bold text-xs"
-                  />
-                  <span className="font-mono text-amber-400 font-bold text-xs">Meses ({Number((plazoMeses / 12).toFixed(1))} Años)</span>
-                </div>
+                <span className="font-mono text-amber-400 font-bold text-xs">{plazoMeses} Meses (10 Años)</span>
               </div>
               <div className="grid grid-cols-6 gap-1">
                 {[12, 24, 36, 60, 84, 120].map(m => (
@@ -284,21 +377,9 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
                   </button>
                 ))}
               </div>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="range"
-                  min="6"
-                  max="120"
-                  step="6"
-                  value={plazoMeses}
-                  onChange={(e) => setPlazoMeses(parseInt(e.target.value) || 6)}
-                  className="flex-1 accent-amber-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
-                />
-                <span className="text-[10px] font-mono text-amber-400 font-semibold">6m a 120m</span>
-              </div>
             </div>
 
-            {/* Tasa de Interés */}
+            {/* Tasa Anual */}
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <label className="text-slate-300 font-semibold">Tasa de Interés Anual:</label>
@@ -320,61 +401,44 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
                   </button>
                 ))}
               </div>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="range"
-                  min="0"
-                  max="20"
-                  step="0.5"
-                  value={tasaInteresAnual}
-                  onChange={(e) => setTasaInteresAnual(parseFloat(e.target.value) || 0)}
-                  className="flex-1 accent-emerald-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
-                />
-                <span className="text-xs font-mono text-white w-12 text-right">
-                  {tasaInteresAnual}%
-                </span>
-              </div>
             </div>
-
           </div>
 
         </div>
 
-        {/* Right Col: Instant Calculation Cards & Surveyor Box (5 cols) */}
+        {/* Right Col: Cuota Nivelada a 120 Meses y Topografía (5 cols) */}
         <div className="lg:col-span-5 space-y-4 flex flex-col justify-between">
           
-          {/* Main Calculation Outcome Card */}
+          {/* Tarjeta Principal de Cuota a 120 Meses */}
           <div className="bg-gradient-to-br from-emerald-900/90 via-slate-900 to-slate-900 rounded-3xl p-6 border border-emerald-500/40 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
             <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-300 font-bold block mb-1">
-              Resultado Hipotecario Quinta Celia
+              Cuota Nivelada Calculada ({plazoMeses} Meses)
             </span>
-
-            <div className="my-3">
-              <span className="text-xs text-slate-400 block mb-0.5">Cuota Mensual Fija Nivelada:</span>
-              <div className="text-3xl sm:text-4xl font-mono font-extrabold text-white flex items-baseline gap-1">
-                <span className="text-emerald-400">{formatMoneda(cuotaMensual)}</span>
-                <span className="text-xs text-slate-400 font-normal">/ mes</span>
-              </div>
+            <div className="flex items-baseline gap-2 mb-4">
+              <span className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
+                {formatMoneda(cuotaMensual)}
+              </span>
+              <span className="text-xs text-slate-400 font-medium">/ mes fijo</span>
             </div>
 
-            {/* Visual Breakdown Bar: Capital vs Interés */}
-            <div className="space-y-1.5 my-4 pt-3 border-t border-slate-800/80">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300">Desglose Total del Financiamiento:</span>
-                <span className="font-mono text-white font-bold">{formatMoneda(totalPagar)}</span>
+            {/* Barra Visual Capital vs Interés */}
+            <div className="space-y-1.5 pb-4 border-b border-slate-800">
+              <div className="flex justify-between text-xs text-slate-300">
+                <span>Composición del Crédito:</span>
+                <span className="font-mono text-emerald-400 font-bold">{formatMoneda(totalPagar)}</span>
               </div>
-              <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden flex">
+              <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
                 <div 
-                  className="bg-emerald-500 h-full transition-all" 
                   style={{ width: `${porcentajeCapital}%` }} 
-                  title={`Capital: ${formatMoneda(montoFinanciado)} (${porcentajeCapital}%)`}
+                  className="h-full bg-emerald-500 transition-all duration-300"
+                  title={`Capital: ${porcentajeCapital}%`}
                 ></div>
                 <div 
-                  className="bg-amber-500 h-full transition-all" 
                   style={{ width: `${porcentajeInteres}%` }} 
-                  title={`Intereses: ${formatMoneda(totalIntereses)} (${porcentajeInteres}%)`}
+                  className="h-full bg-amber-500 transition-all duration-300"
+                  title={`Intereses: ${porcentajeInteres}%`}
                 ></div>
               </div>
               <div className="flex justify-between text-[11px] font-mono pt-0.5">
@@ -383,19 +447,19 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
               </div>
             </div>
 
-            {/* Quick Metrics */}
-            <div className="grid grid-cols-2 gap-2 text-xs pt-2 text-slate-300">
+            {/* Métricas Rápidas */}
+            <div className="grid grid-cols-2 gap-2 text-xs pt-3 text-slate-300">
               <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                <span className="text-[10px] uppercase text-slate-400 block">Enganche Inicial</span>
-                <span className="font-mono font-bold text-white">{formatMoneda(engancheMonto)}</span>
+                <span className="text-[10px] uppercase text-slate-400 block">Precio Total Terreno</span>
+                <span className="font-mono font-bold text-white">{formatMoneda(precioTotal)}</span>
               </div>
               <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                <span className="text-[10px] uppercase text-slate-400 block">Total a Pagar</span>
-                <span className="font-mono font-bold text-emerald-300">{formatMoneda(totalPagar + engancheMonto)}</span>
+                <span className="text-[10px] uppercase text-slate-400 block">Enganche ({enganchePorcentaje}%)</span>
+                <span className="font-mono font-bold text-emerald-300">{formatMoneda(engancheMonto)}</span>
               </div>
             </div>
 
-            {/* Action button to create buyer */}
+            {/* Botón Guardar Comprador */}
             <button
               onClick={handleProcederCreacion}
               className="mt-5 w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
@@ -407,7 +471,7 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
             </button>
           </div>
 
-          {/* Topographer Surveyor Dock */}
+          {/* Topógrafo Dock */}
           <div className="bg-slate-900/90 rounded-3xl p-4 border border-slate-800 shadow-xl flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
@@ -415,7 +479,7 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
               </div>
               <div>
                 <span className="text-[10px] font-mono uppercase text-amber-400 font-bold block">
-                  Topografía Oficial Quinta Celia
+                  Topografía Oficial Finca Celia
                 </span>
                 <p className="text-xs font-mono font-semibold text-slate-200">
                   x1={medidasTopograficas.x1}m | x2={medidasTopograficas.x2}m | y1={medidasTopograficas.y1}m
@@ -436,6 +500,128 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
 
         </div>
 
+      </div>
+
+      {/* ========================================================================= */}
+      {/* SECCIÓN INTERACTIVA: TABLA DE AMORTIZACIÓN DINÁMICA A 120 MESES */}
+      {/* ========================================================================= */}
+      <div className="bg-slate-900/95 rounded-3xl border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+              📅
+            </div>
+            <div>
+              <h3 className="text-base font-display font-bold text-white flex items-center gap-2">
+                Tabla de Amortización para 120 Meses
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  {tablaAmortizacion120.length} Cuotas
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Desglose detallado cuota a cuota con capital, intereses y saldo decreciente actualizado por el precio/m².
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Buscador de Mes */}
+            <div className="relative">
+              <input
+                type="text"
+                value={busquedaMes120}
+                onChange={(e) => setBusquedaMes120(e.target.value)}
+                placeholder="Buscar mes (ej: 1, 60, 120)..."
+                className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 w-44"
+              />
+              {busquedaMes120 && (
+                <button
+                  onClick={() => setBusquedaMes120('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Botón Descargar CSV */}
+            <button
+              onClick={handleDescargarAmortizacionCSV}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Descargar tabla de 120 meses en archivo Excel / CSV"
+            >
+              <span>📥</span>
+              <span className="hidden sm:inline">Descargar Excel (CSV)</span>
+            </button>
+
+            {/* Toggle Visibilidad */}
+            <button
+              onClick={() => setMostrarTabla120(!mostrarTabla120)}
+              className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all cursor-pointer"
+            >
+              {mostrarTabla120 ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
+        </div>
+
+        {mostrarTabla120 && (
+          <div className="overflow-hidden rounded-2xl border border-slate-800">
+            <div className="max-h-[380px] overflow-y-auto overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-slate-950 sticky top-0 z-10 border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                  <tr>
+                    <th className="py-2.5 px-3">Mes #</th>
+                    <th className="py-2.5 px-3">Fecha Vencimiento</th>
+                    <th className="py-2.5 px-3 text-right">Saldo Inicial</th>
+                    <th className="py-2.5 px-3 text-right font-bold text-emerald-400">Cuota Fija</th>
+                    <th className="py-2.5 px-3 text-right text-emerald-300">Capital</th>
+                    <th className="py-2.5 px-3 text-right text-amber-300">Interés</th>
+                    <th className="py-2.5 px-3 text-right">Saldo Restante</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-mono">
+                  {cuotasFiltradas120.map((item) => (
+                    <tr 
+                      key={item.mes}
+                      className={`hover:bg-slate-800/40 transition-colors ${
+                        item.mes % 12 === 0 ? 'bg-emerald-950/20 font-bold' : ''
+                      }`}
+                    >
+                      <td className="py-2 px-3 text-slate-300">
+                        Mes {item.mes} {item.mes % 12 === 0 && `(Año ${item.mes / 12})`}
+                      </td>
+                      <td className="py-2 px-3 text-slate-400">
+                        {item.fechaVencimiento}
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-300">
+                        {formatMoneda(item.saldoInicial)}
+                      </td>
+                      <td className="py-2 px-3 text-right font-extrabold text-emerald-400">
+                        {formatMoneda(item.cuota)}
+                      </td>
+                      <td className="py-2 px-3 text-right text-emerald-300">
+                        {formatMoneda(item.capital)}
+                      </td>
+                      <td className="py-2 px-3 text-right text-amber-300">
+                        {formatMoneda(item.interes)}
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-200 font-semibold">
+                        {formatMoneda(item.saldoFinal)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="bg-slate-950 px-4 py-2.5 border-t border-slate-800 flex flex-wrap items-center justify-between text-[11px] text-slate-400">
+              <span>Mostrando {cuotasFiltradas120.length} de {tablaAmortizacion120.length} meses amortizados</span>
+              <span className="text-emerald-400 font-semibold">
+                Finiquito total proyectado: Mes 120 (Saldo $0.00)
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

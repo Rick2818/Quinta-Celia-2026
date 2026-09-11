@@ -292,7 +292,7 @@ export default function App() {
                 }`}
               >
                 <span>📊</span>
-                <span>Cotizador de Terrenos</span>
+                <span>Módulo Administrativo</span>
               </button>
 
               <button
@@ -480,8 +480,8 @@ export default function App() {
       <footer className="no-print border-t border-slate-900 py-6 bg-slate-950 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="font-display font-bold text-slate-300">Quinta Celia</span>
-            <span>• Cotizador de Terrenos & Control de Cartera</span>
+            <span className="font-display font-bold text-slate-300">Finca Celia</span>
+            <span>• Módulo Administrativo Terrenos de Ricardo (120 Meses)</span>
           </div>
           <div className="flex items-center gap-4 text-slate-400 text-[11px]">
             <span>Topografía Oficial: x1, x2, y1</span>

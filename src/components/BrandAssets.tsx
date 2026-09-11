@@ -88,14 +88,14 @@ export const QuintaCeliaLogo: React.FC<LogoProps> = ({
         <span className={`font-display font-extrabold tracking-tight ${currentSize.text} ${
           variant === 'light' ? 'text-white' : 'text-slate-900'
         }`}>
-          QUINTA <span className={variant === 'light' ? 'text-emerald-400 font-semibold' : 'text-emerald-700 font-semibold'}>CELIA</span>
+          FINCA <span className={variant === 'light' ? 'text-emerald-400 font-semibold' : 'text-emerald-700 font-semibold'}>CELIA</span>
         </span>
         <span className={`font-medium tracking-wider uppercase ${
           variant === 'light' ? 'text-emerald-400/90' : 'text-emerald-800'
         } ${currentSize.sub} flex items-center gap-1.5`}>
-          <span>Terrenos</span>
+          <span>Terrenos de Ricardo</span>
           <span className="w-1 h-1 rounded-full bg-amber-500 inline-block"></span>
-          <span>Hipotecas</span>
+          <span>120 Meses</span>
         </span>
       </div>
     </div>
