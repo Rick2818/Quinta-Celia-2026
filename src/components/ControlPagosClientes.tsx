@@ -353,13 +353,23 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleAbrirBoveda('copiaDui')}
-                    className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
-                  >
-                    <span>📂</span>
-                    <span>Abrir Bóveda Completa</span>
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => handleAbrirBoveda('copiaDui')}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-amber-500/20 transition-all active:scale-95"
+                      title="Escanear DUI, Promesa de Venta o Escritura con la cámara de tu celular o computadora"
+                    >
+                      <span>📷</span>
+                      <span>Escanear Documento con Cámara</span>
+                    </button>
+                    <button
+                      onClick={() => handleAbrirBoveda('copiaDui')}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <span>📂</span>
+                      <span>Ver Expediente</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -391,13 +401,13 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                     </div>
                     <button
                       onClick={() => handleAbrirBoveda('copiaDui')}
-                      className={`mt-3 w-full py-1.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center gap-1 ${
+                      className={`mt-3 w-full py-2 px-3 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
                         clienteActivo.documentos?.copiaDui
                           ? 'bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30'
-                          : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                          : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
                       }`}
                     >
-                      {clienteActivo.documentos?.copiaDui ? '👁️ Ver / Descargar DUI' : '+ Subir Copia DUI'}
+                      {clienteActivo.documentos?.copiaDui ? '👁️ Ver / Descargar DUI' : '📷 Escanear / Subir Copia DUI'}
                     </button>
                   </div>
 
@@ -429,13 +439,13 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                     </div>
                     <button
                       onClick={() => handleAbrirBoveda('promesaVenta')}
-                      className={`mt-3 w-full py-1.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center gap-1 ${
+                      className={`mt-3 w-full py-2 px-3 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
                         clienteActivo.documentos?.promesaVenta
-                          ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30'
-                          : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                          ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40'
+                          : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
                       }`}
                     >
-                      {clienteActivo.documentos?.promesaVenta ? '👁️ Ver Promesa Venta' : '+ Subir Promesa Venta'}
+                      {clienteActivo.documentos?.promesaVenta ? '👁️ Ver Promesa Venta' : '📷 Escanear / Subir Promesa'}
                     </button>
                   </div>
 
@@ -467,13 +477,13 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                     </div>
                     <button
                       onClick={() => handleAbrirBoveda('escrituraCompraVenta')}
-                      className={`mt-3 w-full py-1.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center gap-1 ${
+                      className={`mt-3 w-full py-2 px-3 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
                         clienteActivo.documentos?.escrituraCompraVenta
-                          ? 'bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30'
+                          ? 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40'
                           : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
                       }`}
                     >
-                      {clienteActivo.documentos?.escrituraCompraVenta ? '👁️ Ver Escritura Final' : '+ Subir Escritura'}
+                      {clienteActivo.documentos?.escrituraCompraVenta ? '👁️ Ver Escritura Final' : '📷 Escanear / Subir Escritura'}
                     </button>
                   </div>
                 </div>

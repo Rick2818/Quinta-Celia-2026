@@ -203,18 +203,33 @@ export const BovedaDocumentosModal: React.FC<BovedaDocumentosModalProps> = ({
                 </p>
               </div>
 
-              {/* Botón de Cargar / Reemplazar */}
-              <label className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all shrink-0">
-                <span>📁</span>
-                <span>{procesandoArchivo ? 'Optimizando...' : docActual ? 'Reemplazar Archivo' : 'Subir Documento'}</span>
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  disabled={procesandoArchivo}
-                  onChange={(e) => handleFileUpload(e, tipoActivo)}
-                  className="hidden"
-                />
-              </label>
+              {/* Botones de Escaneo y Subida de Archivos */}
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <label className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all active:scale-95">
+                  <span>📷</span>
+                  <span>{procesandoArchivo ? 'Procesando...' : 'Escanear con Cámara'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    disabled={procesandoArchivo}
+                    onChange={(e) => handleFileUpload(e, tipoActivo)}
+                    className="hidden"
+                  />
+                </label>
+
+                <label className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95">
+                  <span>📁</span>
+                  <span>{docActual ? 'Reemplazar Archivo' : 'Subir Archivo / PDF'}</span>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    disabled={procesandoArchivo}
+                    onChange={(e) => handleFileUpload(e, tipoActivo)}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
             {/* Indicador de optimización / procesamiento */}

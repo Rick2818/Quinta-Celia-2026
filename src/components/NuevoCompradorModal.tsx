@@ -482,15 +482,28 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
                     {docDui ? docDui.nombreArchivo : 'Identificación oficial'}
                   </p>
                 </div>
-                <label className="cursor-pointer text-center text-xs py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 font-medium transition-colors block border border-slate-700">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="hidden"
-                    onChange={(e) => handleSubirArchivo(e, 'dui')}
-                  />
-                  {docDui ? 'Cambiar DUI ↺' : 'Subir Copia DUI +'}
-                </label>
+                <div className="space-y-1.5">
+                  <label className="cursor-pointer text-center text-xs py-1.5 px-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-bold transition-all flex items-center justify-center gap-1.5 border border-amber-500/30">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      // @ts-ignore
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => handleSubirArchivo(e, 'dui')}
+                    />
+                    <span>📷 Escanear con Cámara</span>
+                  </label>
+                  <label className="cursor-pointer text-center text-xs py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 font-medium transition-colors flex items-center justify-center gap-1.5 border border-slate-700">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) => handleSubirArchivo(e, 'dui')}
+                    />
+                    <span>📁 {docDui ? 'Cambiar Archivo' : 'Subir Archivo / PDF'}</span>
+                  </label>
+                </div>
               </div>
 
               {/* Promesa de Venta */}
@@ -512,15 +525,28 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
                     {docPromesa ? docPromesa.nombreArchivo : 'Contrato inicial'}
                   </p>
                 </div>
-                <label className="cursor-pointer text-center text-xs py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-medium transition-colors block border border-slate-700">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="hidden"
-                    onChange={(e) => handleSubirArchivo(e, 'promesa')}
-                  />
-                  {docPromesa ? 'Cambiar Promesa ↺' : 'Subir Promesa +'}
-                </label>
+                <div className="space-y-1.5">
+                  <label className="cursor-pointer text-center text-xs py-1.5 px-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-bold transition-all flex items-center justify-center gap-1.5 border border-amber-500/30">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      // @ts-ignore
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => handleSubirArchivo(e, 'promesa')}
+                    />
+                    <span>📷 Escanear con Cámara</span>
+                  </label>
+                  <label className="cursor-pointer text-center text-xs py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-medium transition-colors flex items-center justify-center gap-1.5 border border-slate-700">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) => handleSubirArchivo(e, 'promesa')}
+                    />
+                    <span>📁 {docPromesa ? 'Cambiar Archivo' : 'Subir Archivo / PDF'}</span>
+                  </label>
+                </div>
               </div>
 
               {/* Escritura de Compra Venta */}
@@ -542,15 +568,28 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
                     {docEscritura ? docEscritura.nombreArchivo : 'Copia al finalizar'}
                   </p>
                 </div>
-                <label className="cursor-pointer text-center text-xs py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 font-medium transition-colors block border border-slate-700">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="hidden"
-                    onChange={(e) => handleSubirArchivo(e, 'escritura')}
-                  />
-                  {docEscritura ? 'Cambiar Escritura ↺' : 'Subir Escritura +'}
-                </label>
+                <div className="space-y-1.5">
+                  <label className="cursor-pointer text-center text-xs py-1.5 px-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-bold transition-all flex items-center justify-center gap-1.5 border border-amber-500/30">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      // @ts-ignore
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => handleSubirArchivo(e, 'escritura')}
+                    />
+                    <span>📷 Escanear con Cámara</span>
+                  </label>
+                  <label className="cursor-pointer text-center text-xs py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 font-medium transition-colors flex items-center justify-center gap-1.5 border border-slate-700">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) => handleSubirArchivo(e, 'escritura')}
+                    />
+                    <span>📁 {docEscritura ? 'Cambiar Archivo' : 'Subir Archivo / PDF'}</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
