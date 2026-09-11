@@ -350,15 +350,6 @@ export default function App() {
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/30 text-emerald-200 font-mono font-bold">7574-3444</span>
               </a>
 
-              <button
-                id="btn-nav-backup"
-                onClick={() => setIsBackupOpen(true)}
-                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-                title="Centro de Respaldos JSON/CSV y Configuración de Divisas/Mora"
-              >
-                <span>🛡️</span>
-                <span className="hidden sm:inline">Respaldos</span>
-              </button>
 
               {/* Botones a la par: Cliente Existente y Nuevo Cliente */}
               <div className="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-xl border border-slate-800">
