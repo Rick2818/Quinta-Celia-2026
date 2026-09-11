@@ -18,8 +18,7 @@ import {
   calcularMedidasTerreno, 
   calcularCuotaMensual, 
   generarTablaAmortizacion, 
-  formatMoneda, 
-  formatearFechaISO 
+  formatMoneda 
 } from '../src/utils/calculos';
 import { ClienteComprador, PagoRealizado, DocumentoExpediente } from '../src/types';
 
@@ -82,7 +81,7 @@ for (let i = 1; i <= 100; i++) {
   const longitudOk = tabla.length === plazo;
   
   // Verificación de convergencia de saldo final
-  const saldoFinal = tabla[tabla.length - 1]?.saldoRestante || 0;
+  const saldoFinal = tabla[tabla.length - 1]?.saldoFinal || 0;
   const saldoCeroOk = saldoFinal <= 1.5; // tolerancia máxima de $1.50 por redondeo centesimal en 120 meses
 
   assert(
@@ -153,6 +152,7 @@ for (let i = 1; i <= 50; i++) {
     nombre: `Comprador Test ${i}`,
     email: `cliente${i}@fincacelia.com`,
     telefono: `+503 7000-${(1000 + i).toString().slice(1)}`,
+    direccion: 'Valle de Zapotitán / Coatepeque',
     cedula: `0${(1000000 + i).toString()}-${i % 10}`,
     loteNombre: `Lote Campestre ${i}`,
     loteNumero: `${i.toString().padStart(2, '0')}`,
@@ -160,8 +160,11 @@ for (let i = 1; i <= 50; i++) {
     topografoValidado: true,
     topografoNombre: 'Ing. Celso R. Valdivia',
     topografoDictamen: 'Medidas certificadas conformes.',
+    topografoFecha: '2026-09-01',
+    precioM2: 50,
     precioTotal: 25000,
     enganche: 2500,
+    enganchePorcentaje: 10,
     montoFinanciado: 22500,
     plazoMeses: 120,
     tasaInteresAnual: 9.5,
@@ -170,6 +173,7 @@ for (let i = 1; i <= 50; i++) {
     estado: 'activo',
     amortizacion: [],
     pagos: [],
+    notas: 'Cliente de prueba',
     creadoEn: new Date().toISOString(),
     actualizadoEn: new Date().toISOString()
   };
@@ -241,6 +245,9 @@ for (let i = 1; i <= 50; i++) {
       id: `pago-${i}-${m}`,
       reciboNumero: `QC-REC-${i.toString().padStart(3, '0')}-${m}`,
       clienteId: `cliente-e2e-${i}`,
+      clienteNombre: `Comprador ${i}`,
+      clienteEmail: `cliente${i}@fincacelia.com`,
+      clienteTelefono: `7000-0000`,
       mesNumero: m,
       montoTotal: itemCuota.cuota,
       abonoCapital: itemCuota.capital,
@@ -249,7 +256,10 @@ for (let i = 1; i <= 50; i++) {
       fechaPago: `2026-0${m + 8}-05`,
       metodo: 'transferencia',
       referencia: `TRF-${90000 + i + m}`,
-      creadoEn: new Date().toISOString()
+      enviadoPorEmail: false,
+      emailDestino: '',
+      loteNombre: `Lote ${i}`,
+      medidasTexto: '20x25m'
     });
   }
 

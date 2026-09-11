@@ -12,7 +12,6 @@ export const ExportarEscritorioModal: React.FC<ExportarEscritorioModalProps> = (
   if (!isOpen) return null;
 
   const [descargando, setDescargando] = useState(false);
-  const [descargandoZip, setDescargandoZip] = useState(false);
   const [descargadoExito, setDescargadoExito] = useState(false);
   const [copiadoExito, setCopiadoExito] = useState(false);
   const [copiando, setCopiando] = useState(false);
@@ -54,53 +53,28 @@ export const ExportarEscritorioModal: React.FC<ExportarEscritorioModalProps> = (
       setDescargadoExito(true);
     } catch (err: any) {
       console.warn('Error con fetch normal, intentando data URI:', err);
+      // Fallback 2: data URI directo si fetch falla
       try {
         const cacheBuster = `?t=${Date.now()}`;
-        const resp2 = await fetch(`/Terrenos%20Ricardo.html${cacheBuster}`, {
+        const fallbackRes = await fetch(`/Terrenos%20Ricardo.html${cacheBuster}`, {
           cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
         });
-        const text2 = await resp2.text();
-        const blob2 = new Blob([text2], { type: 'text/html;charset=utf-8' });
-        const blobUrl2 = window.URL.createObjectURL(blob2);
-        const link2 = document.createElement('a');
-        link2.href = blobUrl2;
-        link2.download = 'Terrenos Ricardo.html';
-        document.body.appendChild(link2);
-        link2.click();
-        document.body.removeChild(link2);
+        const fallbackHtml = await fallbackRes.text();
+        const blob = new Blob([fallbackHtml], { type: 'text/html;charset=utf-8' });
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = 'Terrenos Ricardo.html';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         setDescargadoExito(true);
-      } catch (err2: any) {
-        setErrorDescarga(err.message || 'El navegador bloqueó la descarga en este contenedor.');
+      } catch (fallbackErr) {
+        setErrorDescarga(err?.message || 'El navegador bloqueó la descarga en este contenedor.');
       }
     } finally {
       setDescargando(false);
-    }
-  };
-
-  // Descarga directa del ZIP sin abrir nueva pestaña
-  const handleDescargarZipDirecto = async () => {
-    setDescargandoZip(true);
-    try {
-      const cacheBuster = `?t=${Date.now()}`;
-      const response = await fetch(`/api/descargar-zip${cacheBuster}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
-      });
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = 'fuente-terrenos-ricardo.zip';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
-    } catch (err) {
-      // Fallback
-      window.location.href = `/api/descargar-zip?t=${Date.now()}`;
-    } finally {
-      setDescargandoZip(false);
     }
   };
 
@@ -136,10 +110,10 @@ export const ExportarEscritorioModal: React.FC<ExportarEscritorioModalProps> = (
             </div>
             <div>
               <h3 className="text-white font-display font-bold text-base">
-                Exportar Proyecto & Guardar en Escritorio
+                Guardar en Escritorio (Archivo Autónomo Offline)
               </h3>
               <p className="text-xs text-slate-400">
-                Paquete ZIP para Antigravity y archivo HTML autónomo para Windows
+                Archivo HTML independiente para Windows listo para usar con doble clic sin internet
               </p>
             </div>
           </div>
@@ -155,43 +129,12 @@ export const ExportarEscritorioModal: React.FC<ExportarEscritorioModalProps> = (
         {/* Content Body */}
         <div className="p-6 space-y-5 text-xs text-slate-300">
 
-          {/* Opción 1 DESTACADA: Paquete ZIP Completo (Para Antigravity) */}
-          <div className="bg-gradient-to-br from-amber-950/60 via-slate-900 to-amber-950/40 p-5 rounded-2xl border-2 border-amber-500/60 shadow-xl space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold block mb-1">
-                  ⭐ Para Antigravity 2.0 / Código Completo
-                </span>
-                <h4 className="text-white text-base font-extrabold flex items-center gap-2">
-                  <span>Descargar Paquete ZIP del Proyecto</span>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-mono text-[10px] font-extrabold">.ZIP</span>
-                </h4>
-                <p className="text-slate-300 text-xs mt-1 leading-relaxed">
-                  Contiene <strong>todo el proyecto completo</strong>: código fuente TypeScript, componentes React, scripts de inicio, estilos Tailwind y configuración lista para importar en Antigravity, VS Code o GitHub.
-                </p>
-              </div>
-              <span className="text-3xl">📦</span>
-            </div>
-
-            <button
-              id="btn-descargar-zip-modal"
-              onClick={handleDescargarZipDirecto}
-              disabled={descargandoZip}
-              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 active:scale-[0.98] text-slate-950 font-black text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all ring-2 ring-amber-300/60"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span>{descargandoZip ? 'Generando archivo ZIP...' : '📥 Descargar Paquete ZIP (Antigravity 2.0)'}</span>
-            </button>
-          </div>
-
-          {/* Opción 2: Archivo Terrenos Ricardo.html */}
+          {/* Opción Principal: Archivo Terrenos Ricardo.html */}
           <div className="bg-slate-900/80 p-5 rounded-2xl border border-emerald-500/40 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block mb-1">
-                  Opción 2: Archivo HTML para Windows (Sin Internet)
+                  Archivo HTML para Windows (Sin Internet)
                 </span>
                 <h4 className="text-white text-sm font-bold flex items-center gap-2">
                   <span>Descargar "Terrenos-Ricardo-120-Meses.html"</span>

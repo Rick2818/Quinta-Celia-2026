@@ -266,34 +266,6 @@ export default function App() {
     setIsNuevoClienteOpen(true);
   };
 
-  const [descargandoZipNavbar, setDescargandoZipNavbar] = useState(false);
-
-  const handleDescargarZipNavbar = async () => {
-    setDescargandoZipNavbar(true);
-    try {
-      const cacheBuster = `?t=${Date.now()}`;
-      const response = await fetch(`/api/descargar-zip${cacheBuster}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
-      });
-      if (!response.ok) throw new Error('Error al descargar ZIP');
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = 'fuente-terrenos-ricardo.zip';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
-      mostrarNotificacion('¡Paquete ZIP descargado exitosamente!');
-    } catch (err) {
-      window.location.href = `/api/descargar-zip?t=${Date.now()}`;
-    } finally {
-      setDescargandoZipNavbar(false);
-    }
-  };
-
   const handleAbrirTopografoDesdeMedidas = (medidas: MedidasTerreno, clienteNombre?: string) => {
     setMedidasActivas(medidas);
     setTopografoClienteNombre(clienteNombre);
@@ -352,7 +324,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* Right Tools (Search, Export/Desktop, ZIP, Backup, Supabase & New Buyer) */}
+            {/* Right Tools (Search, Mobile QR, WhatsApp, Backup, Export/Desktop, Supabase & New Buyer) */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 id="btn-nav-buscar-cliente"
@@ -398,18 +370,6 @@ export default function App() {
                 <span>🛡️</span>
                 <span className="hidden sm:inline">Respaldos</span>
               </button>
-
-              <button
-                id="btn-nav-descargar-zip"
-                onClick={handleDescargarZipNavbar}
-                disabled={descargandoZipNavbar}
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-500/20 cursor-pointer active:scale-95 ring-1 ring-amber-300/50"
-                title="Descargar paquete ZIP con todo el código fuente del proyecto (ideal para Antigravity)"
-              >
-                <span>📦</span>
-                <span>{descargandoZipNavbar ? 'Descargando...' : 'Descargar ZIP'}</span>
-              </button>
-
 
               <button
                 id="btn-guardar-escritorio"
