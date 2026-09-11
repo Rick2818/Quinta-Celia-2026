@@ -62,11 +62,12 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
     texto: string;
     hora: string;
     intencion?: string;
+    datosAccion?: Record<string, any>;
   }>>([
     {
       id: 'wa-1',
       remitente: 'asistente',
-      texto: `🌲 ¡Hola! Bienvenido a Quinta Celia (Terrenos Ricardo). Soy la asistente virtual 24/7 con IA Gemini Flash 2.5. ¿En qué te puedo apoyar hoy? (Consultar tu cuota, ver lotes disponibles o agendar una visita).`,
+      texto: `🌲 ¡Hola! Bienvenido a Finca Celia (Terrenos de Ricardo). Soy la asistente virtual 24/7 con IA Gemini Flash 2.5 y vinculación MCP Google. ¿En qué te puedo apoyar hoy?\n\n• Conocer precios por m² y lotes disponibles\n• Ubicación exacta y accesos en el Valle\n• Agendar visita al terreno o videollamada Google Meet\n• Consultar tu cuota o saldo a 120 meses`,
       hora: 'Ahora',
       intencion: 'bienvenida'
     }
@@ -186,13 +187,16 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
     } : undefined;
 
     const lotesDisponibles = [
-      { numero: 'L-04', nombre: 'Vista al Valle', areaM2: 500, precioTotal: 25000, cuotaDesde: 195 },
-      { numero: 'L-07', nombre: 'El Manantial', areaM2: 620, precioTotal: 31000, cuotaDesde: 240 },
-      { numero: 'L-12', nombre: 'Mirador Campestre', areaM2: 750, precioTotal: 37500, cuotaDesde: 290 }
+      { numero: 'L-01', nombre: 'El Manantial (Plano)', areaM2: 500, precioTotal: 25000, cuotaDesde: 220 },
+      { numero: 'L-04', nombre: 'Vista al Valle (Panorámico)', areaM2: 768, precioTotal: 34560, cuotaDesde: 290 },
+      { numero: 'L-07', nombre: 'El Mirador del Bosque', areaM2: 750, precioTotal: 36000, cuotaDesde: 305 },
+      { numero: 'L-10', nombre: 'La Cumbre Verde', areaM2: 600, precioTotal: 27000, cuotaDesde: 235 },
+      { numero: 'L-15', nombre: 'Prados de Celia (Macrolote)', areaM2: 1000, precioTotal: 45000, cuotaDesde: 380 }
     ];
 
     let respuestaTexto = '';
     let intencionDetectada: string | undefined = undefined;
+    let datosAccionExtraidos: Record<string, any> | undefined = undefined;
 
     // 1. Intentar llamar al backend si está disponible
     try {
@@ -212,6 +216,7 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
         const json = await res.json();
         respuestaTexto = json.data?.respuestaMensaje;
         intencionDetectada = json.data?.intencion;
+        datosAccionExtraidos = json.data?.datosAccion;
       }
     } catch (e) {
       // Backend no disponible
@@ -229,8 +234,9 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
         });
         respuestaTexto = respuestaDirecta.respuestaMensaje;
         intencionDetectada = respuestaDirecta.intencion;
+        datosAccionExtraidos = respuestaDirecta.datosAccion;
       } catch (errDirecto) {
-        respuestaTexto = `¡Hola! Gracias por comunicarte con Quinta Celia 🌲. Con gusto te ayudamos con tu consulta sobre lotes y cuotas.`;
+        respuestaTexto = `¡Hola! Gracias por comunicarte con Finca Celia 🌲. Con gusto te apoyamos con la información de los terrenos, precios y visitas.`;
         intencionDetectada = 'fallback';
       }
     }
@@ -242,11 +248,13 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
         remitente: 'asistente' as const,
         texto: respuestaTexto,
         hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        intencion: intencionDetectada
+        intencion: intencionDetectada,
+        datosAccion: datosAccionExtraidos
       }
     ]);
     setWaCargando(false);
   };
+
 
   const handleAplicarYCerrar = () => {
     const dictamenFinal = dictamenOficial || 
@@ -566,38 +574,44 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
               <div className="flex flex-wrap gap-2 text-xs">
                 <span className="text-slate-400 self-center text-[11px] font-medium">Probar con un clic:</span>
                 <button
+                  onClick={() => handleEnviarMensajeWhatsApp('¿Dónde están ubicados exactamente y cómo se llega?')}
+                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
+                >
+                  📍 "Ubicación y accesos"
+                </button>
+                <button
+                  onClick={() => handleEnviarMensajeWhatsApp('¿Cuál es el precio del metro cuadrado y qué lotes tienen disponibles a 120 meses?')}
+                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
+                >
+                  💰 "Precios $/m² y lotes"
+                </button>
+                <button
+                  onClick={() => handleEnviarMensajeWhatsApp('Quisiera agendar una visita al terreno para este sábado a las 10:00 AM')}
+                  className="px-3 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/40 text-emerald-300 cursor-pointer"
+                >
+                  📅 "Agendar visita presencial"
+                </button>
+                <button
+                  onClick={() => handleEnviarMensajeWhatsApp('Vivo en USA y quisiera una reunión virtual por Google Meet para ver los lotes')}
+                  className="px-3 py-1 rounded-lg bg-sky-950/60 hover:bg-sky-900/80 border border-sky-500/40 text-sky-300 cursor-pointer"
+                >
+                  🎥 "Reunión Google Meet"
+                </button>
+                <button
                   onClick={() => handleEnviarMensajeWhatsApp('¿Cuánto debo de mi cuota este mes y cuándo vence?')}
                   className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
                 >
-                  💰 "¿Cuánto debo de mi cuota?"
-                </button>
-                <button
-                  onClick={() => handleEnviarMensajeWhatsApp('¿Qué lotes tienen disponibles y cuál es la cuota a 120 meses?')}
-                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
-                >
-                  🌲 "¿Qué lotes tienen disponibles?"
-                </button>
-                <button
-                  onClick={() => handleEnviarMensajeWhatsApp('Quisiera agendar una visita al terreno para este sábado a las 10am')}
-                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
-                >
-                  📅 "Agendar visita al terreno"
-                </button>
-                <button
-                  onClick={() => handleEnviarMensajeWhatsApp('Ya hice el depósito bancario de mi cuota, ¿me envían mi recibo?')}
-                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
-                >
-                  🧾 "Ya deposité mi cuota"
+                  💵 "Consultar mi cuota"
                 </button>
               </div>
 
               {/* Ventana de Chat Estilo WhatsApp */}
-              <div className="bg-[#0b141a] rounded-2xl border border-slate-800 p-4 shadow-inner flex flex-col h-[340px]">
+              <div className="bg-[#0b141a] rounded-2xl border border-slate-800 p-4 shadow-inner flex flex-col h-[380px]">
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                   {waHistorial.map(msg => (
                     <div 
                       key={msg.id}
-                      className={`flex flex-col max-w-[80%] ${
+                      className={`flex flex-col max-w-[85%] ${
                         msg.remitente === 'cliente' ? 'ml-auto items-end' : 'mr-auto items-start'
                       }`}
                     >
@@ -607,10 +621,65 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
                           : 'bg-[#202c33] text-slate-100 rounded-bl-none shadow-md border border-slate-700/40'
                       }`}>
                         <p className="whitespace-pre-line">{msg.texto}</p>
-                        <div className="flex items-center justify-end gap-1 mt-1">
+
+                        {/* Tarjeta de Acciones Google MCP (Calendar, Meet, Gmail, Maps) */}
+                        {msg.datosAccion && (
+                          <div className="mt-3 pt-2.5 border-t border-slate-700/60 flex flex-wrap gap-2">
+                            {msg.datosAccion.enlaceGoogleCalendar && (
+                              <a
+                                href={msg.datosAccion.enlaceGoogleCalendar}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] transition-colors shadow"
+                              >
+                                <span>📅</span>
+                                <span>Agregar a Google Calendar</span>
+                                <span className="text-[9px]">↗</span>
+                              </a>
+                            )}
+                            {msg.datosAccion.enlaceGoogleMeet && (
+                              <a
+                                href={msg.datosAccion.enlaceGoogleMeet}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-[11px] transition-colors shadow"
+                              >
+                                <span>🎥</span>
+                                <span>Entrar a Google Meet</span>
+                                <span className="text-[9px]">↗</span>
+                              </a>
+                            )}
+                            {msg.datosAccion.enlaceGmailConfirmacion && (
+                              <a
+                                href={msg.datosAccion.enlaceGmailConfirmacion}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-semibold text-[11px] transition-colors shadow"
+                              >
+                                <span>✉️</span>
+                                <span>Confirmar por Gmail</span>
+                                <span className="text-[9px]">↗</span>
+                              </a>
+                            )}
+                            {msg.datosAccion.enlaceGoogleMaps && (
+                              <a
+                                href={msg.datosAccion.enlaceGoogleMaps}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-[11px] transition-colors shadow"
+                              >
+                                <span>📍</span>
+                                <span>Ver en Google Maps</span>
+                                <span className="text-[9px]">↗</span>
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-end gap-1 mt-2">
                           {msg.intencion && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-900/50 text-slate-300 font-mono mr-1">
-                              {msg.intencion}
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-900/60 text-emerald-400 font-mono mr-1 border border-slate-700/50">
+                              MCP: {msg.intencion}
                             </span>
                           )}
                           <span className="text-[10px] text-slate-400">{msg.hora}</span>
@@ -620,8 +689,8 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
                     </div>
                   ))}
                   {waCargando && (
-                    <div className="flex items-center gap-2 text-xs text-slate-400 italic bg-[#202c33] p-2.5 rounded-xl w-fit">
-                      <span className="animate-spin text-emerald-400">⏳</span> Gemini Flash 2.5 está respondiendo...
+                    <div className="flex items-center gap-2 text-xs text-slate-400 italic bg-[#202c33] p-2.5 rounded-xl w-fit border border-slate-700/50">
+                      <span className="animate-spin text-emerald-400">⏳</span> IA Gemini Flash 2.5 procesando respuesta con MCP Google...
                     </div>
                   )}
                 </div>

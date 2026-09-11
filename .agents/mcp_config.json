@@ -1,0 +1,18 @@
+﻿{
+  "mcpServers": {
+    "google-workspace": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-google-workspace"],
+      "env": {
+        "GOOGLE_WORKSPACE_CREDENTIALS_FILE": "credentials.json",
+        "GOOGLE_WORKSPACE_TOKEN_FILE": "token.json"
+      },
+      "description": "Servidor MCP Google Workspace para Finca Celia: Agendamiento de citas en Google Calendar, reuniones por Google Meet, notificaciones formales por Gmail y control de prospectos en Google Sheets."
+    },
+    "google-calendar": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-google-calendar"],
+      "description": "Gestión directa de visitas a los terrenos de Finca Celia y citas con Ricardo en Google Calendar."
+    }
+  }
+}

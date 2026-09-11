@@ -75,13 +75,13 @@ export const FinancieroResponseSchema: Schema = {
   ]
 };
 
-// 3. Esquema estructurado para Agente WhatsApp (Gemini Flash)
+// 3. Esquema estructurado para Agente WhatsApp (Gemini Flash 2.5 + Google MCP)
 export const WhatsAppResponseSchema: Schema = {
   type: Type.OBJECT,
   properties: {
     intencion: {
       type: Type.STRING,
-      enum: ['consulta_saldo', 'cotizar_lote', 'agendar_visita', 'reportar_pago', 'faq', 'desconocido']
+      enum: ['consulta_saldo', 'cotizar_lote', 'agendar_visita', 'agendar_meet', 'consultar_ubicacion', 'reportar_pago', 'faq', 'desconocido']
     },
     respuestaMensaje: { type: Type.STRING },
     clienteIdentificado: { type: Type.BOOLEAN },
@@ -91,9 +91,16 @@ export const WhatsAppResponseSchema: Schema = {
         loteNumero: { type: Type.STRING },
         montoConsultado: { type: Type.NUMBER },
         fechaCitaSugerida: { type: Type.STRING },
+        horaCitaSugerida: { type: Type.STRING },
+        tipoCita: { type: Type.STRING, enum: ['presencial_terreno', 'google_meet_virtual'] },
+        enlaceGoogleCalendar: { type: Type.STRING },
+        enlaceGoogleMeet: { type: Type.STRING },
+        enlaceGmailConfirmacion: { type: Type.STRING },
+        enlaceGoogleMaps: { type: Type.STRING },
         accionRequerida: { type: Type.STRING }
       }
     }
   },
   required: ['intencion', 'respuestaMensaje', 'clienteIdentificado']
 };
+

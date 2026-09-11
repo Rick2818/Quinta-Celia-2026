@@ -1,36 +1,52 @@
 ==================================================================
-           QUINTA CELIA - TERRENOS RICARDO
-  Simulador de Hipotecas de Terrenos, Topografía & Control de Pagos
+   MÓDULO ADMINISTRATIVO FINCA CELIA TERRENOS DE RICARDO
+   Administración Hipotecaria 120 Meses, Topografía & WhatsApp IA
 ==================================================================
 
-¡Bienvenido! Tienes 2 formas muy sencillas de abrir y usar tu aplicación:
+¡Hola Ricardo! Tu carpeta de trabajo y tu sistema están 100% actualizados.
+Tienes 3 formas sencillas de usar y sincronizar tu aplicación:
 
 ------------------------------------------------------------------
-FORMA 1: DOBLE CLIC INMEDIATO (SIN INSTALAR NADA)
+FORMA 1: ACCESO EN TU CELULAR (NUBE 24/7 SIN ENCIENDER LA LAPTOP)
 ------------------------------------------------------------------
-1. En esta misma carpeta encontrarás el archivo:
+Abre este enlace desde cualquier teléfono celular o computadora:
+👉 https://rick2818.github.io/Quinta-Celia-2026/
+
+- Tus datos se guardan en la nube segura de Supabase.
+- Tu esposa puede ingresar desde su teléfono 24/7 y revisar clientes, cuotas y pagos.
+- Incluye el Asistente de WhatsApp con IA Gemini Flash 2.5 (Línea Oficial: 7574-3444) y MCP Google (Calendar, Meet, Gmail).
+
+------------------------------------------------------------------
+FORMA 2: ACTUALIZAR EL CELULAR EN 1 SOLO CLIC
+------------------------------------------------------------------
+Cuando hagas cambios en esta computadora y quieras que aparezcan de inmediato en tu celular:
+1. Haz doble clic en el archivo:
+   👉 "Actualizar-Celular.bat"
+2. El sistema compilará y enviará los cambios a la nube automáticamente.
+
+------------------------------------------------------------------
+FORMA 3: ABRIR EN ESTA COMPUTADORA SIN INSTALAR NADA (OFFLINE)
+------------------------------------------------------------------
+1. Haz doble clic en cualquiera de estos archivos:
    👉 "Terrenos Ricardo.html"
-
-2. Hazle DOBLE CLIC (o clic derecho > Abrir con > Google Chrome / Microsoft Edge).
-
-3. ¡Listo! La aplicación completa se abrirá inmediatamente en tu navegador.
-   - Funciona 100% offline sin necesidad de conexión a internet.
-   - Guarda tus clientes, cuotas y pagos automáticamente en tu navegador.
-   - Puedes emitir e imprimir recibos y realizar simulaciones.
+   o el acceso directo:
+   👉 "Abrir Quinta Celia - Terrenos Ricardo.lnk"
+2. Se abrirá de inmediato en Chrome o Edge sin requerir internet.
 
 ------------------------------------------------------------------
-FORMA 2: MODO SERVIDOR COMPLETO (OPCIONAL)
+NOVEDADES PRINCIPALES INCLUIDAS:
 ------------------------------------------------------------------
-Si deseas ejecutar el servidor Node.js local con la IA de Gemini activa:
-1. Asegúrate de tener instalado Node.js (https://nodejs.org).
-2. Abre una terminal o consola en esta carpeta.
-3. Ejecuta:
-   npm install
-   npm run dev
-4. Abre en tu navegador: http://localhost:3000
+✓ Nombre oficial: "Módulo Administrativo Finca Celia Terrenos de Ricardo".
+✓ Campo exclusivo: "Precio del Metro Cuadrado ($/m²)" con cálculo automático.
+✓ Tabla de Amortización fija a 120 Meses (10 Años) con descarga a Excel/CSV.
+✓ Asistente de WhatsApp con IA Gemini Flash 2.5 conectado a tu línea +503 7574-3444.
+✓ Vinculación MCP Google: Agendamiento en Google Calendar, salas de Google Meet, correos de Gmail y GPS Google Maps.
+✓ Registro automático de visitas en la nube (tabla visitas_terreno de Supabase).
 
 ------------------------------------------------------------------
 SOPORTE Y ASISTENCIA TÉCNICA
 ------------------------------------------------------------------
-Desarrollado para Quinta Celia - Ing. Celso R. Valdivia (Peritaje Topográfico)
-y Ricardo (Administración de Hipotecas).
+Desarrollado para Finca Celia - Ing. Celso R. Valdivia (Peritaje Topográfico)
+y Ricardo (Administración de Hipotecas y Ventas).
+Línea WhatsApp Oficial: +503 7574-3444
+
