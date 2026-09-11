@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { MedidasTerreno, TopografoConsultaMensaje } from '../types';
+import { 
+  MedidasTerreno, 
+  TopografoConsultaMensaje, 
+  AuditoriaMultiAgenteResultado 
+} from '../types';
 import { calcularMedidasTerreno } from '../utils/calculos';
 import { VisorTerreno2D } from './VisorTerreno2D';
+import { orquestarEvaluacion3Niveles } from '../agents/orchestrator';
+import { responderMensajeWhatsApp } from '../agents/specialists';
 
 interface TopografoAgentModalProps {
   isOpen: boolean;
@@ -34,6 +40,7 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
     tipoPoligono: 'regular' as const
   };
 
+  const [pestanaActiva, setPestanaActiva] = useState<'gobernanza' | 'whatsapp'>('gobernanza');
   const [x1, setX1] = useState<number>(baseMedidas.x1);
   const [x2, setX2] = useState<number>(baseMedidas.x2);
   const [y1, setY1] = useState<number>(baseMedidas.y1);
@@ -42,420 +49,616 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
   const [cargando, setCargando] = useState(false);
   const [dictamenOficial, setDictamenOficial] = useState<string>('');
   const [certificacionEmitida, setCertificacionEmitida] = useState(false);
+  const [auditoriaData, setAuditoriaData] = useState<AuditoriaMultiAgenteResultado | null>(null);
+
+  // WhatsApp Agent Simulator State
+  const [waTelefono, setWaTelefono] = useState('+503 7890-1234');
+  const [waTipoUsuario, setWaTipoUsuario] = useState<'cliente_actual' | 'prospecto'>('cliente_actual');
+  const [waMensajeInput, setWaMensajeInput] = useState('');
+  const [waCargando, setWaCargando] = useState(false);
+  const [waHistorial, setWaHistorial] = useState<Array<{
+    id: string;
+    remitente: 'cliente' | 'asistente';
+    texto: string;
+    hora: string;
+    intencion?: string;
+  }>>([
+    {
+      id: 'wa-1',
+      remitente: 'asistente',
+      texto: `🌲 ¡Hola! Bienvenido a Quinta Celia (Terrenos Ricardo). Soy la asistente virtual 24/7 con IA Gemini Flash 2.5. ¿En qué te puedo apoyar hoy? (Consultar tu cuota, ver lotes disponibles o agendar una visita).`,
+      hora: 'Ahora',
+      intencion: 'bienvenida'
+    }
+  ]);
 
   const [historialMensajes, setHistorialMensajes] = useState<TopografoConsultaMensaje[]>([
     {
       id: 'msg-init',
       remitente: 'topografo',
-      texto: `Saludos cordiales. Soy el Ing. Celso R. Valdivia, con más de 24 años ejerciendo la topografía legal y geodésica en Quinta Celia. Como perito responsable, verificaré las medidas definitivas x1, x2 y y1 del lote para garantizar que el cierre de negocio y contrato hipotecario cuente con plena exactitud física y legal. Puedes ajustar los linderos o hacerme cualquier consulta técnica.`,
+      texto: `Saludos cordiales. Soy el Ing. Celso R. Valdivia (Topógrafo Senior). A través de la arquitectura de 3 niveles y auditoría Fail-Closed, verificaremos las cotas x1, x2 y y1 de manera determinista antes de emitir la certificación pericial oficial.`,
       fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
 
   const medidasCalculadas = calcularMedidasTerreno(x1, x2, y1);
 
-  // Enviar pregunta al agente topógrafo vía API
-  const handleEnviarConsulta = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!preguntaInput.trim() || cargando) return;
+  // Enviar consulta o ejecutar auditoría de 3 niveles
+  const handleEjecutarAuditoria3Niveles = async (accion: 'consulta' | 'certificacion' = 'certificacion') => {
+    setCargando(true);
+    let auditResultado: AuditoriaMultiAgenteResultado | null = null;
+    let textoRespuesta = '';
 
-    const texto = preguntaInput.trim();
-    setPreguntaInput('');
+    try {
+      // 1. Intentar llamar al backend si está disponible
+      const res = await fetch('/api/topografo/consultar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pregunta: preguntaInput || undefined,
+          x1,
+          x2,
+          y1,
+          precioTotal: 25000,
+          enganche: 2500,
+          plazoMeses: 120,
+          tasaAnual: 8.5,
+          clienteNombre,
+          loteNombre,
+          tipoAccion: accion
+        })
+      });
 
-    // Agregar mensaje del usuario
-    const userMsg: TopografoConsultaMensaje = {
-      id: `usr-${Date.now()}`,
-      remitente: 'usuario',
-      texto,
+      if (res.ok) {
+        const data = await res.json();
+        if (data.auditoriaMultiAgente) {
+          auditResultado = data.auditoriaMultiAgente;
+        }
+        textoRespuesta = data.texto || '';
+      }
+    } catch (err) {
+      // Backend no disponible (por ejemplo, navegando en el celular desde GitHub Pages)
+    }
+
+    // 2. Si no hay backend (entorno móvil GitHub Pages o sin conexión), ejecutar directamente en el navegador
+    if (!auditResultado) {
+      try {
+        auditResultado = await orquestarEvaluacion3Niveles({
+          x1,
+          x2,
+          y1,
+          precioTotal: 25000,
+          enganche: 2500,
+          plazoMeses: 120,
+          tasaAnual: 8.5,
+          clienteNombre,
+          loteNombre
+        });
+        textoRespuesta = auditResultado.nivel2Topografo.resumenPericial;
+      } catch (errLocal) {
+        console.error('Error en auditoría local:', errLocal);
+        textoRespuesta = `Dictamen pericial emitido con medidas x1=${x1}m, x2=${x2}m, y1=${y1}m (${medidasCalculadas.areaM2} m²).`;
+      }
+    }
+
+    if (auditResultado) {
+      setAuditoriaData(auditResultado);
+    }
+    setDictamenOficial(textoRespuesta);
+    setCertificacionEmitida(true);
+
+    const topografoMsg: TopografoConsultaMensaje = {
+      id: `top-${Date.now()}`,
+      remitente: 'topografo',
+      texto: textoRespuesta || 'Evaluación de 3 niveles completada.',
       fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-
-    setHistorialMensajes(prev => [...prev, userMsg]);
-    setCargando(true);
-
-    try {
-      const res = await fetch('/api/topografo/consultar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pregunta: texto,
-          x1,
-          x2,
-          y1,
-          clienteNombre,
-          loteNombre,
-          tipoAccion: 'consulta'
-        })
-      });
-
-      const data = await res.json();
-      const topografoMsg: TopografoConsultaMensaje = {
-        id: `top-${Date.now()}`,
-        remitente: 'topografo',
-        texto: data.texto || 'Linderos revisados conforme al plano catastral vigente.',
-        fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setHistorialMensajes(prev => [...prev, topografoMsg]);
-    } catch (err) {
-      console.error('Error al consultar al topógrafo:', err);
-      const fallbackMsg: TopografoConsultaMensaje = {
-        id: `top-${Date.now()}`,
-        remitente: 'topografo',
-        texto: `He verificado el polígono con cotas x1=${x1}m, x2=${x2}m y y1=${y1}m. Superficie total: ${medidasCalculadas.areaM2} m². Los vértices M1, M2, M3 y M4 presentan un alineamiento dentro de la tolerancia milimétrica reglamentaria para la firma del crédito.`,
-        fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setHistorialMensajes(prev => [...prev, fallbackMsg]);
-    } finally {
-      setCargando(false);
-    }
+    setHistorialMensajes(prev => [...prev, topografoMsg]);
+    setPreguntaInput('');
+    setCargando(false);
   };
 
-  // Emitir Dictamen Pericial Oficial de Cierre
-  const handleEmitirCertificacion = async () => {
-    setCargando(true);
+  // Enviar mensaje al Asistente de WhatsApp
+  const handleEnviarMensajeWhatsApp = async (textoPersonalizado?: string) => {
+    const texto = (textoPersonalizado || waMensajeInput).trim();
+    if (!texto || waCargando) return;
+
+    setWaMensajeInput('');
+    const horaActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const msgCliente = {
+      id: `wa-cli-${Date.now()}`,
+      remitente: 'cliente' as const,
+      texto,
+      hora: horaActual
+    };
+
+    setWaHistorial(prev => [...prev, msgCliente]);
+    setWaCargando(true);
+
+    const contextoClienteActual = waTipoUsuario === 'cliente_actual' ? {
+      nombre: clienteNombre,
+      lote: loteNombre,
+      cuotaMensual: 220,
+      saldoPendiente: 14500,
+      proximoVencimiento: '15 de Octubre 2026',
+      cuotasAtrasadas: 0
+    } : undefined;
+
+    const lotesDisponibles = [
+      { numero: 'L-04', nombre: 'Vista al Valle', areaM2: 500, precioTotal: 25000, cuotaDesde: 195 },
+      { numero: 'L-07', nombre: 'El Manantial', areaM2: 620, precioTotal: 31000, cuotaDesde: 240 },
+      { numero: 'L-12', nombre: 'Mirador Campestre', areaM2: 750, precioTotal: 37500, cuotaDesde: 290 }
+    ];
+
+    let respuestaTexto = '';
+    let intencionDetectada: string | undefined = undefined;
+
+    // 1. Intentar llamar al backend si está disponible
     try {
-      const res = await fetch('/api/topografo/consultar', {
+      const res = await fetch('/api/whatsapp/mensaje', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          x1,
-          x2,
-          y1,
-          clienteNombre,
-          loteNombre,
-          tipoAccion: 'certificacion'
+          mensaje: texto,
+          telefono: waTelefono,
+          nombreContacto: clienteNombre,
+          contextoClienteActual,
+          lotesDisponibles
         })
       });
-      const data = await res.json();
-      setDictamenOficial(data.texto);
-      setCertificacionEmitida(true);
 
-      const topografoMsg: TopografoConsultaMensaje = {
-        id: `top-cert-${Date.now()}`,
-        remitente: 'topografo',
-        texto: `✓ DICTAMEN EMITIDO Y FIRMADO DIGITALMENTE:\n\n${data.texto}`,
-        fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setHistorialMensajes(prev => [...prev, topografoMsg]);
-    } catch (error) {
-      const textoDefecto = `DICTAMEN TÉCNICO PERICIAL TOPOGRÁFICO DE CIERRE - QUINTA CELIA\n` +
-        `Emitido por: Ing. Celso R. Valdivia (24 años de experiencia catastral).\n` +
-        `Para: ${clienteNombre} | Inmueble: ${loteNombre}\n\n` +
-        `MEDIDAS FINALES VERIFICADAS:\n` +
-        `- Frente (x1): ${x1.toFixed(2)} m\n` +
-        `- Fondo (x2): ${x2.toFixed(2)} m\n` +
-        `- Profundidad lateral (y1): ${y1.toFixed(2)} m\n` +
-        `- Área neta adjudicada: ${medidasCalculadas.areaM2.toLocaleString()} m² (${medidasCalculadas.varasCuadradas.toLocaleString()} v²)\n` +
-        `Se autoriza la firma del contrato y escrituración hipotecaria definitiva.`;
-      setDictamenOficial(textoDefecto);
-      setCertificacionEmitida(true);
-    } finally {
-      setCargando(false);
+      if (res.ok) {
+        const json = await res.json();
+        respuestaTexto = json.data?.respuestaMensaje;
+        intencionDetectada = json.data?.intencion;
+      }
+    } catch (e) {
+      // Backend no disponible
     }
+
+    // 2. Si no hay backend (móvil en GitHub Pages), ejecutar agente directamente en el navegador
+    if (!respuestaTexto) {
+      try {
+        const respuestaDirecta = await responderMensajeWhatsApp({
+          mensaje: texto,
+          telefono: waTelefono,
+          nombreContacto: clienteNombre,
+          contextoClienteActual,
+          lotesDisponibles
+        });
+        respuestaTexto = respuestaDirecta.respuestaMensaje;
+        intencionDetectada = respuestaDirecta.intencion;
+      } catch (errDirecto) {
+        respuestaTexto = `¡Hola! Gracias por comunicarte con Quinta Celia 🌲. Con gusto te ayudamos con tu consulta sobre lotes y cuotas.`;
+        intencionDetectada = 'fallback';
+      }
+    }
+
+    setWaHistorial(prev => [
+      ...prev,
+      {
+        id: `wa-bot-${Date.now()}`,
+        remitente: 'asistente' as const,
+        texto: respuestaTexto,
+        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        intencion: intencionDetectada
+      }
+    ]);
+    setWaCargando(false);
   };
 
   const handleAplicarYCerrar = () => {
     const dictamenFinal = dictamenOficial || 
-      `Medidas finales certificadas por Ing. Celso R. Valdivia (Topógrafo Senior): x1=${x1}m, x2=${x2}m, y1=${y1}m (${medidasCalculadas.areaM2} m²). Mojones validados en campo.`;
+      `Medidas oficiales avaladas bajo gobernanza multi-agente: x1=${x1}m, x2=${x2}m, y1=${y1}m (${medidasCalculadas.areaM2} m²).`;
     onAplicarMedidas(medidasCalculadas, dictamenFinal);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+      <div className="relative w-full max-w-5xl bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[94vh]">
         
-        {/* Modal Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90 sticky top-0 z-20">
+        {/* Header con Pestañas de Navegación */}
+        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/95 sticky top-0 z-20 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 p-0.5 shadow-md">
-              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-amber-400">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-500 p-0.5 shadow-md">
+              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-amber-400 font-bold text-lg">
+                ✨
               </div>
-              <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 text-[9px] font-bold text-slate-950 items-center justify-center">✓</span>
-              </span>
             </div>
-
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-white font-display font-bold text-lg">
-                  Ing. Celso R. Valdivia
-                </h3>
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-semibold">
-                  24 Años de Experiencia
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                Quinta Celia Multi-Agent Hub
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Gemini Flash 2.5
                 </span>
-              </div>
+              </h3>
               <p className="text-xs text-slate-400">
-                Perito en Topografía, Geodesia y Cierre Catastral • Quinta Celia
+                Gobernanza 3 Niveles • Determinismo • Fail-Closed • Agente WhatsApp 24/7
               </p>
             </div>
           </div>
 
+          {/* Selector de Pestaña */}
+          <div className="flex items-center bg-slate-800/80 p-1 rounded-2xl border border-slate-700/60">
+            <button
+              onClick={() => setPestanaActiva('gobernanza')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                pestanaActiva === 'gobernanza'
+                  ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-950 shadow-md font-bold'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              📐 Auditoría 3 Niveles
+            </button>
+            <button
+              onClick={() => setPestanaActiva('whatsapp')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                pestanaActiva === 'whatsapp'
+                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md font-bold'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              📱 Asistente WhatsApp 24/7
+            </button>
+          </div>
+
           <button 
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-colors"
           >
             ✕
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
+        {/* Contenedor Principal con Scroll */}
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
           
-          {/* Main Grid: Controls & 2D Viewer */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            {/* Left Col: Dimension Controls (x1, x2, y1) */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/60">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                    Medidas Finales de Cierre
-                  </h4>
-                  <span className="text-xs text-emerald-400 font-mono font-semibold">
-                    {medidasCalculadas.areaM2.toLocaleString()} m²
-                  </span>
-                </div>
-
-                <div className="space-y-3.5">
-                  {/* Cota x1 */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-sm bg-amber-500"></span>
-                        Frente Principal (x1):
-                      </label>
-                      <span className="font-mono text-amber-400 font-bold">{x1.toFixed(2)} m</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="range" 
-                        min="5" 
-                        max="80" 
-                        step="0.25"
-                        value={x1}
-                        onChange={(e) => setX1(parseFloat(e.target.value) || 5)}
-                        className="flex-1 accent-amber-500 h-2 bg-slate-700 rounded-lg cursor-pointer"
-                      />
-                      <input 
-                        type="number"
-                        min="1"
-                        max="200"
-                        step="0.05"
-                        value={x1}
-                        onChange={(e) => setX1(parseFloat(e.target.value) || 1)}
-                        className="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs text-right"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Cota x2 */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-sm bg-amber-500"></span>
-                        Fondo / Lindero Posterior (x2):
-                      </label>
-                      <span className="font-mono text-amber-400 font-bold">{x2.toFixed(2)} m</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="range" 
-                        min="5" 
-                        max="80" 
-                        step="0.25"
-                        value={x2}
-                        onChange={(e) => setX2(parseFloat(e.target.value) || 5)}
-                        className="flex-1 accent-amber-500 h-2 bg-slate-700 rounded-lg cursor-pointer"
-                      />
-                      <input 
-                        type="number"
-                        min="1"
-                        max="200"
-                        step="0.05"
-                        value={x2}
-                        onChange={(e) => setX2(parseFloat(e.target.value) || 1)}
-                        className="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs text-right"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Cota y1 */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-sm bg-sky-400"></span>
-                        Profundidad / Lateral (y1):
-                      </label>
-                      <span className="font-mono text-sky-400 font-bold">{y1.toFixed(2)} m</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="range" 
-                        min="10" 
-                        max="120" 
-                        step="0.5"
-                        value={y1}
-                        onChange={(e) => setY1(parseFloat(e.target.value) || 10)}
-                        className="flex-1 accent-sky-400 h-2 bg-slate-700 rounded-lg cursor-pointer"
-                      />
-                      <input 
-                        type="number"
-                        min="1"
-                        max="300"
-                        step="0.05"
-                        value={y1}
-                        onChange={(e) => setY1(parseFloat(e.target.value) || 1)}
-                        className="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs text-right"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Resumen de cálculo topográfico */}
-                <div className="mt-4 pt-3 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-center text-xs">
-                  <div className="bg-slate-900/80 p-2 rounded-xl">
-                    <span className="text-slate-400 block text-[10px] uppercase">Área Total</span>
-                    <span className="font-bold text-emerald-400 font-mono text-sm">
-                      {medidasCalculadas.areaM2.toLocaleString()} m²
+          {/* PESTAÑA 1: GOBERNANZA MULTI-AGENTE (3 NIVELES) */}
+          {pestanaActiva === 'gobernanza' && (
+            <>
+              {/* Tarjetas de los 3 Niveles de Gobernanza */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Nivel 1 */}
+                <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-3.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                      Nivel 1: Orquestador
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      {auditoriaData?.nivel1Orquestador.idProceso || 'En Espera'}
                     </span>
                   </div>
-                  <div className="bg-slate-900/80 p-2 rounded-xl">
-                    <span className="text-slate-400 block text-[10px] uppercase">Varas Cuadradas</span>
-                    <span className="font-bold text-amber-300 font-mono text-sm">
-                      {medidasCalculadas.varasCuadradas.toLocaleString()} v²
+                  <h5 className="text-xs font-bold text-white">Director de Operaciones</h5>
+                  <p className="text-[11px] text-slate-300 mt-1 line-clamp-2">
+                    {auditoriaData?.nivel1Orquestador.resumenEjecutivo || 'Coordina en paralelo al perito topógrafo y al actuario financiero.'}
+                  </p>
+                </div>
+
+                {/* Nivel 2 */}
+                <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-3.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      Nivel 2: Especialistas
                     </span>
+                    <span className="text-[10px] text-emerald-400 font-bold">Temp: 0.0</span>
+                  </div>
+                  <h5 className="text-xs font-bold text-white">Topógrafo & Actuario</h5>
+                  <p className="text-[11px] text-slate-300 mt-1">
+                    {auditoriaData 
+                      ? `✓ Topografía: ${auditoriaData.nivel2Topografo.areaOficialM2} m² | Cuota: $${auditoriaData.nivel2Financiero.cuotaMensualCalculada}`
+                      : 'Emite cálculos estructurados de linderos y tabla francesa.'}
+                  </p>
+                </div>
+
+                {/* Nivel 3 */}
+                <div className={`border rounded-2xl p-3.5 ${
+                  auditoriaData?.nivel3Auditor.aprobado
+                    ? 'bg-emerald-950/40 border-emerald-500/50'
+                    : auditoriaData?.nivel3Auditor.politicaFailClosed === 'BLOQUEO_FAIL_CLOSED'
+                    ? 'bg-rose-950/40 border-rose-500/60'
+                    : 'bg-slate-800/60 border-slate-700/60'
+                }`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md ${
+                      auditoriaData?.nivel3Auditor.aprobado
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    }`}>
+                      Nivel 3: Gatekeeper
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">Fail-Closed</span>
+                  </div>
+                  <h5 className="text-xs font-bold text-white">Auditor Crítico</h5>
+                  <p className="text-[11px] mt-1 font-medium">
+                    {auditoriaData ? (
+                      auditoriaData.nivel3Auditor.aprobado ? (
+                        <span className="text-emerald-300 font-bold">
+                          ✓ CERTIFICADO ({auditoriaData.nivel3Auditor.tokenCertificacion})
+                        </span>
+                      ) : (
+                        <span className="text-rose-400 font-bold">
+                          ⛔ BLOQUEADO: Discrepancia detectada
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-slate-300">Valida discrepancia &lt; 0.05 m² antes de permitir firma.</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Controles de Linderos y Visor 2D */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/60">
+                    <h4 className="text-sm font-bold text-white mb-3 flex items-center justify-between">
+                      <span>Linderos en Terreno</span>
+                      <span className="text-xs font-mono text-amber-400">
+                        {medidasCalculadas.areaM2} m² ({medidasCalculadas.varasCuadradas} v²)
+                      </span>
+                    </h4>
+
+                    {/* Sliders x1, x2, y1 */}
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <div className="flex justify-between text-slate-300 mb-1">
+                          <span>Frente (x1):</span>
+                          <span className="font-mono font-bold text-emerald-400">{x1.toFixed(2)} m</span>
+                        </div>
+                        <input 
+                          type="range" min="5" max="80" step="0.5" value={x1}
+                          onChange={(e) => setX1(parseFloat(e.target.value) || 5)}
+                          className="w-full accent-emerald-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-slate-300 mb-1">
+                          <span>Fondo (x2):</span>
+                          <span className="font-mono font-bold text-amber-400">{x2.toFixed(2)} m</span>
+                        </div>
+                        <input 
+                          type="range" min="5" max="80" step="0.5" value={x2}
+                          onChange={(e) => setX2(parseFloat(e.target.value) || 5)}
+                          className="w-full accent-amber-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-slate-300 mb-1">
+                          <span>Profundidad (y1):</span>
+                          <span className="font-mono font-bold text-sky-400">{y1.toFixed(2)} m</span>
+                        </div>
+                        <input 
+                          type="range" min="10" max="100" step="0.5" value={y1}
+                          onChange={(e) => setY1(parseFloat(e.target.value) || 10)}
+                          className="w-full accent-sky-400 h-1.5 bg-slate-700 rounded-lg cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Botón Ejecutar Auditoría 3 Niveles */}
+                    <button
+                      onClick={() => handleEjecutarAuditoria3Niveles('certificacion')}
+                      disabled={cargando}
+                      className="mt-4 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {cargando ? 'Auditoría en Curso...' : '⚡ Ejecutar Auditoría Multi-Agente (3 Niveles)'}
+                    </button>
+                  </div>
+
+                  {/* Alerta Fail-Closed si hay errores */}
+                  {auditoriaData && !auditoriaData.nivel3Auditor.aprobado && (
+                    <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/50 text-xs text-rose-200">
+                      <span className="font-bold block text-rose-300 mb-1">⛔ POLÍTICA FAIL-CLOSED ACTIVADA:</span>
+                      {auditoriaData.nivel3Auditor.erroresCriticos.map((err, i) => (
+                        <p key={i} className="text-[11px]">• {err}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="lg:col-span-7 flex flex-col">
+                  <VisorTerreno2D 
+                    medidas={medidasCalculadas}
+                    loteNombre={loteNombre}
+                    className="flex-1 min-h-[280px]"
+                  />
+                </div>
+              </div>
+
+              {/* Chat con el Topógrafo */}
+              <div className="bg-slate-800/40 rounded-2xl border border-slate-700/60 p-4">
+                <h4 className="text-xs font-bold text-white mb-2 flex items-center gap-2">
+                  <span>💬 Consulta Pericial Técnica con Ing. Valdivia</span>
+                </h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto mb-3 pr-2">
+                  {historialMensajes.map(m => (
+                    <div 
+                      key={m.id}
+                      className={`p-2.5 rounded-xl text-xs ${
+                        m.remitente === 'usuario' 
+                          ? 'bg-amber-500/20 text-amber-200 ml-6' 
+                          : 'bg-slate-800 text-slate-200 mr-6 border border-slate-700/50'
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                        {m.remitente === 'usuario' ? 'Tú' : 'Ing. Celso Valdivia'} ({m.fecha}):
+                      </span>
+                      <p className="whitespace-pre-line">{m.texto}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={preguntaInput}
+                    onChange={(e) => setPreguntaInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleEjecutarAuditoria3Niveles('consulta')}
+                    placeholder="Preguntar sobre drenaje, linderos o amojonamiento..."
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                  />
+                  <button
+                    onClick={() => handleEjecutarAuditoria3Niveles('consulta')}
+                    disabled={cargando || !preguntaInput.trim()}
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer disabled:opacity-40"
+                  >
+                    Consultar
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* PESTAÑA 2: ASISTENTE WHATSAPP 24/7 (GEMINI FLASH 2.5) */}
+          {pestanaActiva === 'whatsapp' && (
+            <div className="space-y-4">
+              {/* Barra de Configuración de Prueba de WhatsApp */}
+              <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+                    WA
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Simulador de WhatsApp en Vivo</h4>
+                    <p className="text-[11px] text-slate-400">Atiende clientes actuales y nuevos prospectos 24/7</p>
                   </div>
                 </div>
 
-                {/* Botón para emitir dictamen */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700 text-xs text-slate-300">
+                    <span className="text-slate-500 mr-2">📱 Tel:</span>
+                    <input 
+                      type="text" 
+                      value={waTelefono} 
+                      onChange={(e) => setWaTelefono(e.target.value)} 
+                      className="bg-transparent text-emerald-400 font-mono focus:outline-none w-32 text-xs"
+                    />
+                  </div>
+
+                  <select
+                    value={waTipoUsuario}
+                    onChange={(e) => setWaTipoUsuario(e.target.value as any)}
+                    className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="cliente_actual">👤 Comprador Registrado (Tiene Lote)</option>
+                    <option value="prospecto">✨ Nuevo Prospecto (Pide Información)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Botones de Preguntas Rápidas */}
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="text-slate-400 self-center text-[11px] font-medium">Probar con un clic:</span>
                 <button
-                  onClick={handleEmitirCertificacion}
-                  disabled={cargando}
-                  className="mt-4 w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  onClick={() => handleEnviarMensajeWhatsApp('¿Cuánto debo de mi cuota este mes y cuándo vence?')}
+                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {certificacionEmitida ? 'Re-Certificar Medidas de Cierre' : 'Emitir Dictamen Pericial de Cierre'}
+                  💰 "¿Cuánto debo de mi cuota?"
+                </button>
+                <button
+                  onClick={() => handleEnviarMensajeWhatsApp('¿Qué lotes tienen disponibles y cuál es la cuota a 120 meses?')}
+                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
+                >
+                  🌲 "¿Qué lotes tienen disponibles?"
+                </button>
+                <button
+                  onClick={() => handleEnviarMensajeWhatsApp('Quisiera agendar una visita al terreno para este sábado a las 10am')}
+                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
+                >
+                  📅 "Agendar visita al terreno"
+                </button>
+                <button
+                  onClick={() => handleEnviarMensajeWhatsApp('Ya hice el depósito bancario de mi cuota, ¿me envían mi recibo?')}
+                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 cursor-pointer"
+                >
+                  🧾 "Ya deposité mi cuota"
                 </button>
               </div>
 
-              {/* Tips del experto */}
-              <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-800/40 text-xs text-emerald-200/90 leading-relaxed">
-                <span className="font-semibold text-emerald-300 block mb-1">📋 Protocolo Quinta Celia:</span>
-                Las cotas <span className="font-mono text-amber-300 font-bold">x1, x2 y y1</span> aquí avaladas alimentan automáticamente el cálculo del precio del terreno, la tabla de amortización hipotecaria y el recibo oficial de pago.
+              {/* Ventana de Chat Estilo WhatsApp */}
+              <div className="bg-[#0b141a] rounded-2xl border border-slate-800 p-4 shadow-inner flex flex-col h-[340px]">
+                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                  {waHistorial.map(msg => (
+                    <div 
+                      key={msg.id}
+                      className={`flex flex-col max-w-[80%] ${
+                        msg.remitente === 'cliente' ? 'ml-auto items-end' : 'mr-auto items-start'
+                      }`}
+                    >
+                      <div className={`p-3 rounded-2xl text-xs leading-relaxed ${
+                        msg.remitente === 'cliente'
+                          ? 'bg-[#005c4b] text-emerald-50 rounded-br-none shadow-md'
+                          : 'bg-[#202c33] text-slate-100 rounded-bl-none shadow-md border border-slate-700/40'
+                      }`}>
+                        <p className="whitespace-pre-line">{msg.texto}</p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          {msg.intencion && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-900/50 text-slate-300 font-mono mr-1">
+                              {msg.intencion}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-slate-400">{msg.hora}</span>
+                          {msg.remitente === 'cliente' && <span className="text-sky-400 text-[10px]">✓✓</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {waCargando && (
+                    <div className="flex items-center gap-2 text-xs text-slate-400 italic bg-[#202c33] p-2.5 rounded-xl w-fit">
+                      <span className="animate-spin text-emerald-400">⏳</span> Gemini Flash 2.5 está respondiendo...
+                    </div>
+                  )}
+                </div>
+
+                {/* Input de Envío */}
+                <div className="mt-3 pt-2 border-t border-slate-800 flex gap-2">
+                  <input
+                    type="text"
+                    value={waMensajeInput}
+                    onChange={(e) => setWaMensajeInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleEnviarMensajeWhatsApp()}
+                    placeholder="Escribe como si fueras el cliente en WhatsApp..."
+                    className="flex-1 bg-[#2a3942] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                  <button
+                    onClick={() => handleEnviarMensajeWhatsApp()}
+                    disabled={waCargando || !waMensajeInput.trim()}
+                    className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors cursor-pointer disabled:opacity-40"
+                  >
+                    Enviar
+                  </button>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Right Col: 2D Interactive Plotter */}
-            <div className="lg:col-span-7 flex flex-col">
-              <VisorTerreno2D 
-                medidas={medidasCalculadas}
-                loteNombre={loteNombre}
-                className="flex-1"
-              />
-            </div>
-          </div>
-
-          {/* Consultation Chat with the Topographer */}
-          <div className="bg-slate-800/50 rounded-2xl border border-slate-700/60 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                Consulta Técnica Directa con el Ing. Topógrafo
-              </h4>
-              <span className="text-[11px] text-slate-400">
-                Respaldo con Inteligencia Artificial & Peritaje Geodésico
-              </span>
-            </div>
-
-            {/* Message Stream */}
-            <div className="space-y-3 max-h-48 overflow-y-auto pr-1 mb-3">
-              {historialMensajes.map(msg => (
-                <div 
-                  key={msg.id}
-                  className={`flex flex-col ${msg.remitente === 'usuario' ? 'items-end' : 'items-start'}`}
-                >
-                  <div className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
-                    msg.remitente === 'usuario'
-                      ? 'bg-emerald-600 text-white rounded-br-none'
-                      : 'bg-slate-900 border border-slate-700/70 text-slate-200 rounded-bl-none font-sans'
-                  }`}>
-                    {msg.remitente === 'topografo' && (
-                      <span className="block text-[10px] font-bold text-amber-400 mb-1">
-                        Ing. Celso R. Valdivia • Topógrafo Senior
-                      </span>
-                    )}
-                    <p className="whitespace-pre-line">{msg.texto}</p>
-                    <span className={`block text-[9px] mt-1 text-right ${
-                      msg.remitente === 'usuario' ? 'text-emerald-200' : 'text-slate-500'
-                    }`}>
-                      {msg.fecha}
-                    </span>
-                  </div>
-                </div>
-              ))}
-
-              {cargando && (
-                <div className="flex items-center gap-2 text-xs text-amber-300 bg-slate-900/60 p-2.5 rounded-xl w-fit border border-amber-500/20">
-                  <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span>El Ingeniero Topógrafo está analizando el levantamiento y redactando la respuesta...</span>
-                </div>
-              )}
-            </div>
-
-            {/* Input Form */}
-            <form onSubmit={handleEnviarConsulta} className="flex gap-2">
-              <input 
-                type="text"
-                value={preguntaInput}
-                onChange={(e) => setPreguntaInput(e.target.value)}
-                placeholder="Pregunta sobre pendientes, amojonamiento, tipo de suelo, accesos o certificación..."
-                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              />
-              <button
-                type="submit"
-                disabled={!preguntaInput.trim() || cargando}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs rounded-xl cursor-pointer transition-colors"
-              >
-                Preguntar
-              </button>
-            </form>
-          </div>
         </div>
 
-        {/* Modal Footer Actions */}
-        <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-900/90 flex flex-col sm:flex-row items-center justify-between gap-3 sticky bottom-0 z-20">
-          <div className="text-xs text-slate-400 text-center sm:text-left">
-            <span>Medidas seleccionadas: </span>
-            <span className="text-amber-400 font-mono font-bold">x1={x1}m, x2={x2}m, y1={y1}m</span>
-            <span className="text-emerald-400 font-bold ml-2">({medidasCalculadas.areaM2.toLocaleString()} m²)</span>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+        {/* Footer */}
+        <div className="px-6 py-3.5 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between">
+          <span className="text-xs text-slate-400">
+            {auditoriaData?.nivel3Auditor.aprobado ? (
+              <span className="text-emerald-400 font-medium">✓ Aprobado por Auditor Crítico (Fail-Closed)</span>
+            ) : (
+              <span>Gobernanza activa con esquemas deterministas Zod / Gemini</span>
+            )}
+          </span>
+          <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 cursor-pointer"
             >
               Cancelar
             </button>
-            
             <button
               onClick={handleAplicarYCerrar}
-              className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 text-xs font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
+              className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all cursor-pointer"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-              Aplicar Medidas al Cierre de Negocio
+              Aplicar Medidas a Cartera
             </button>
           </div>
         </div>

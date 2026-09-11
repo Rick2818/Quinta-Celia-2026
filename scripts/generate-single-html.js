@@ -63,27 +63,16 @@ function buildSingleHtml() {
     () => `  <script type="text/javascript">\n${safeJsContent}\n  </script>\n</body>`
   );
 
-  // Write Terrenos Ricardo.html in root, dist, and public
+  // Write single-file standalone Terrenos Ricardo.html in root and dist
   const targetRoot = path.resolve('Terrenos Ricardo.html');
   const targetDist = path.join(distDir, 'Terrenos Ricardo.html');
   const targetDistIndex = path.join(distDir, 'index.html');
-  const targetRoot120 = path.resolve('Terrenos-Ricardo-120-Meses.html');
-  const targetDist120 = path.join(distDir, 'Terrenos-Ricardo-120-Meses.html');
-
-  const publicDir = path.resolve('public');
-  if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-  const targetPublic = path.join(publicDir, 'Terrenos Ricardo.html');
-  const targetPublic120 = path.join(publicDir, 'Terrenos-Ricardo-120-Meses.html');
 
   fs.writeFileSync(targetRoot, htmlContent, 'utf-8');
   fs.writeFileSync(targetDist, htmlContent, 'utf-8');
   fs.writeFileSync(targetDistIndex, htmlContent, 'utf-8');
-  fs.writeFileSync(targetPublic, htmlContent, 'utf-8');
-  fs.writeFileSync(targetRoot120, htmlContent, 'utf-8');
-  fs.writeFileSync(targetDist120, htmlContent, 'utf-8');
-  fs.writeFileSync(targetPublic120, htmlContent, 'utf-8');
 
-  console.log('✓ Successfully created pure self-contained "Terrenos Ricardo.html" and "Terrenos-Ricardo-120-Meses.html"');
+  console.log('✓ Successfully created pure self-contained "Terrenos Ricardo.html"');
 }
 
 buildSingleHtml();

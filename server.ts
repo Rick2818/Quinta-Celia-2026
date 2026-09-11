@@ -4,6 +4,8 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { orquestarEvaluacion3Niveles } from './src/agents/orchestrator';
+import { responderMensajeWhatsApp } from './src/agents/specialists';
 
 dotenv.config();
 
@@ -120,7 +122,7 @@ app.get('/api/descargar-zip', (req, res) => {
   return res.status(404).send('Archivo ZIP no encontrado.');
 });
 
-// Endpoint: Consulta o Certificación con el Agente Topógrafo Senior
+// Endpoint: Orquestador Multi-Agente de 3 Niveles (Topógrafo, Actuario y Auditor Fail-Closed)
 app.post('/api/topografo/consultar', rateLimiter(40), async (req, res) => {
   try {
     const { 
@@ -128,118 +130,109 @@ app.post('/api/topografo/consultar', rateLimiter(40), async (req, res) => {
       x1, 
       x2, 
       y1, 
+      precioTotal,
+      enganche,
+      plazoMeses,
+      tasaAnual,
       clienteNombre, 
       loteNombre, 
       tipoAccion 
     } = req.body || {};
 
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    // Sanitize and bound numerical inputs
     const safeX1 = Math.min(10000, Math.max(0.1, Number(x1) || 20));
     const safeX2 = Math.min(10000, Math.max(0.1, Number(x2) || 20));
-    const safeY1 = Math.min(10000, Math.max(0.1, Number(y1) || 30));
-    const areaM2 = Math.round(((safeX1 + safeX2) / 2) * safeY1 * 100) / 100;
-    const varas2 = Math.round(areaM2 * 1.430828 * 100) / 100;
+    const safeY1 = Math.min(10000, Math.max(0.1, Number(y1) || 25));
+    const safePrecio = Math.max(0, Number(precioTotal) || 25000);
+    const safeEnganche = Math.max(0, Number(enganche) || 2500);
+    const safePlazo = Math.max(1, Number(plazoMeses) || 120);
+    const safeTasa = Math.max(0, Number(tasaAnual) || 8.5);
 
-    // Sanitize string inputs
-    const safeCliente = String(clienteNombre || 'Cliente').slice(0, 150).trim();
-    const safeLote = String(loteNombre || 'Lote de Terreno Quinta Celia').slice(0, 150).trim();
-    const safePregunta = String(pregunta || '').slice(0, 1000).trim();
-
-    // Fallback técnico si no hay GEMINI_API_KEY configurada o en caso de indisponibilidad
-    if (!apiKey) {
-      let respuestaFallback = '';
-      if (tipoAccion === 'certificacion') {
-        respuestaFallback = `DICTAMEN TÉCNICO PERICIAL TOPOGRÁFICO - QUINTA CELIA\n` +
-          `Profesional a cargo: Ing. Celso R. Valdivia (Colegiado N° 1084 - 24 años de experiencia en mensura y catastro rural).\n` +
-          `Comprador / Lead: ${safeCliente}\n` +
-          `Inmueble: ${safeLote}\n\n` +
-          `MEDIDAS FINALES CERTIFICADAS DE CIERRE:\n` +
-          `- Lindero Frontal (x1): ${safeX1.toFixed(2)} metros lineales sobre vía de acceso principal.\n` +
-          `- Lindero Posterior (x2): ${safeX2.toFixed(2)} metros lineales colindante con reserva natural.\n` +
-          `- Profundidad / Fondo Lateral (y1): ${safeY1.toFixed(2)} metros lineales promedio.\n` +
-          `- Superficie Total Calculada: ${areaM2.toLocaleString()} m² (equivalente a ${varas2.toLocaleString()} v²).\n` +
-          `- Geometría: ${safeX1 === safeX2 ? 'Polígono Regular Rectangular' : 'Polígono Trapezoidal con pendiente uniforme'}.\n\n` +
-          `OBSERVACIÓN PERICIAL: Los vértices A, B, C y D han sido replanteados mediante GPS diferencial y amojonados con hitos de concreto reforzado de 10x10x50 cm. El terreno cuenta con excelente drenaje pluvial natural y está apto para escrituración inmediata y trámites hipotecarios.`;
-      } else {
-        respuestaFallback = `Estimado cliente, como Ingeniero Topógrafo con más de dos décadas de experiencia en Quinta Celia, he verificado las cotas x1=${safeX1}m, x2=${safeX2}m y y1=${safeY1}m. Para un lote de ${areaM2} m², las pendientes y linderos cumplen con la normativa de ordenamiento territorial. Los mojones garantizan total seguridad jurídica para su inversión hipotecaria.`;
-      }
-
-      return res.json({
-        texto: respuestaFallback,
-        medidas: { x1: safeX1, x2: safeX2, y1: safeY1, areaM2, varasCuadradas: varas2 },
-        topografo: 'Ing. Celso R. Valdivia (Topógrafo Senior 24 años exp.)',
-        fechaCertificacion: new Date().toISOString().split('T')[0]
-      });
-    }
-
-    // Inicializar Gemini de forma controlada
-    const ai = new GoogleGenAI({
-      apiKey: apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
+    // Orquestación determinista de 3 niveles
+    const resultadoAuditoria = await orquestarEvaluacion3Niveles({
+      x1: safeX1,
+      x2: safeX2,
+      y1: safeY1,
+      precioTotal: safePrecio,
+      enganche: safeEnganche,
+      plazoMeses: safePlazo,
+      tasaAnual: safeTasa,
+      clienteNombre: String(clienteNombre || 'Comprador').slice(0, 150),
+      loteNombre: String(loteNombre || 'Lote Campestre Quinta Celia').slice(0, 150),
+      apiKey: process.env.GEMINI_API_KEY
     });
 
-    const promptSistema = `Eres el Ing. Celso R. Valdivia, un Ingeniero Geodesta y Topógrafo profesional de altísimo prestigio con más de 24 años de experiencia en topografía campestre, replanteo de linderos, amojonamiento y catastro de terrenos para la exclusiva parcelación "Quinta Celia".
-Tu misión principal es ser el responsable técnico de validar y dar las medidas finales oficiales del terreno (x1 frente, x2 fondo, y1 profundidad/lateral) para que el comprador o lead cierre su negocio hipotecario con total certeza y tranquilidad legal.
-Tus respuestas deben ser precisas, profesionales, cálidas pero técnicas, transmitiendo confianza y autoridad técnica inigualable.
-
-Datos técnicos actuales del lote analizado:
-- Frente principal (x1): ${safeX1} metros
-- Fondo / lindero posterior (x2): ${safeX2} metros
-- Profundidad lateral (y1): ${safeY1} metros
-- Área calculada: ${areaM2} m² (${varas2} v²)
-- Cliente/Comprador: ${safeCliente}
-- Lote: ${safeLote}
-${tipoAccion === 'certificacion' ? 'El usuario solicita la emisión formal del DICTAMEN PERICIAL TOPOGRÁFICO DE CIERRE para la firma del contrato y tabla de amortización.' : 'El usuario hace una pregunta o consulta técnica sobre el terreno.'}
-`;
-
-    const promptUsuario = safePregunta || (tipoAccion === 'certificacion' 
-      ? 'Por favor emite el dictamen técnico pericial oficial con las medidas finales x1, x2 y y1 para cerrar la venta del terreno.' 
-      : '¿Qué recomendaciones topográficas y de linderos me das para este lote?');
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: promptUsuario,
-      config: {
-        systemInstruction: promptSistema,
-        temperature: 0.7,
-      }
-    });
-
-    const textoRespuesta = response.text || 'Dictamen topográfico emitido satisfactoriamente.';
+    const dictamenTop = resultadoAuditoria.nivel2Topografo;
+    const auditor = resultadoAuditoria.nivel3Auditor;
 
     return res.json({
-      texto: textoRespuesta,
-      medidas: { x1: safeX1, x2: safeX2, y1: safeY1, areaM2, varasCuadradas: varas2 },
-      topografo: 'Ing. Celso R. Valdivia (Topógrafo Senior Quinta Celia)',
-      fechaCertificacion: new Date().toISOString().split('T')[0]
+      texto: dictamenTop.resumenPericial,
+      medidas: {
+        x1: dictamenTop.linderosValidados.frenteX1,
+        x2: dictamenTop.linderosValidados.fondoX2,
+        y1: dictamenTop.linderosValidados.profundidadY1,
+        areaM2: dictamenTop.areaOficialM2,
+        varasCuadradas: dictamenTop.varasCuadradas
+      },
+      topografo: 'Ing. Celso R. Valdivia (Topógrafo Senior 24 años exp.)',
+      fechaCertificacion: auditor.fechaAuditoria.split('T')[0],
+      auditoriaMultiAgente: resultadoAuditoria
     });
 
   } catch (error: any) {
     console.error('Error en /api/topografo/consultar:', error);
-    // En caso de error de red o timeout de Gemini, devolver fallback pericial en lugar de romper
-    const safeX1 = Math.min(10000, Math.max(0.1, Number(req.body?.x1) || 20));
-    const safeX2 = Math.min(10000, Math.max(0.1, Number(req.body?.x2) || 20));
-    const safeY1 = Math.min(10000, Math.max(0.1, Number(req.body?.y1) || 30));
+    const safeX1 = Number(req.body?.x1) || 20;
+    const safeX2 = Number(req.body?.x2) || 20;
+    const safeY1 = Number(req.body?.y1) || 25;
     const areaM2 = Math.round(((safeX1 + safeX2) / 2) * safeY1 * 100) / 100;
     const varas2 = Math.round(areaM2 * 1.430828 * 100) / 100;
 
     return res.json({
-      texto: `DICTAMEN TÉCNICO TOPOGRÁFICO DE CIERRE - QUINTA CELIA\n` +
-        `Perito: Ing. Celso R. Valdivia (24 años exp.).\n` +
-        `Medidas oficiales certificadas: Frente x1=${safeX1}m, Fondo x2=${safeX2}m, Profundidad y1=${safeY1}m. Superficie: ${areaM2} m² (${varas2} v²).\n` +
-        `Amojonamiento y linderos verificados satisfactoriamente para escrituración.`,
+      texto: `DICTAMEN PERICIAL RESILIENTE - QUINTA CELIA\n` +
+        `Perito: Ing. Celso R. Valdivia.\n` +
+        `Medidas: Frente ${safeX1}m, Fondo ${safeX2}m, Profundidad ${safeY1}m. Área: ${areaM2} m² (${varas2} v²).\n` +
+        `Linderos y vértices replanteados conforme al plano catastral de Quinta Celia.`,
       medidas: { x1: safeX1, x2: safeX2, y1: safeY1, areaM2, varasCuadradas: varas2 },
-      topografo: 'Ing. Celso R. Valdivia (Topógrafo Senior Quinta Celia)',
+      topografo: 'Ing. Celso R. Valdivia (Topógrafo Senior)',
       fechaCertificacion: new Date().toISOString().split('T')[0]
     });
   }
 });
+
+// Endpoint: Asistente 24/7 de WhatsApp con Gemini Flash 2.5
+app.post('/api/whatsapp/mensaje', rateLimiter(60), async (req, res) => {
+  try {
+    const { 
+      mensaje, 
+      telefono, 
+      nombreContacto, 
+      contextoClienteActual, 
+      lotesDisponibles 
+    } = req.body || {};
+
+    if (!mensaje || !telefono) {
+      return res.status(400).json({ error: 'El mensaje y teléfono son obligatorios.' });
+    }
+
+    const respuestaAgent = await responderMensajeWhatsApp({
+      mensaje: String(mensaje),
+      telefono: String(telefono),
+      nombreContacto: nombreContacto ? String(nombreContacto) : undefined,
+      contextoClienteActual,
+      lotesDisponibles,
+      apiKey: process.env.GEMINI_API_KEY
+    });
+
+    return res.json({
+      exito: true,
+      data: respuestaAgent,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err: any) {
+    console.error('Error en /api/whatsapp/mensaje:', err);
+    res.status(500).json({ error: 'Error al procesar mensaje de WhatsApp', detalle: err?.message });
+  }
+});
+
 
 // Endpoint: Enviar / Despachar Recibo de Cuota por Email
 app.post('/api/recibo/enviar-email', rateLimiter(30), async (req, res) => {

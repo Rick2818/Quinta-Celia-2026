@@ -129,3 +129,116 @@ export interface BackupData {
   };
 }
 
+// ==========================================
+// NUEVOS TIPOS: INVENTARIO, LEADS & WHATSAPP
+// ==========================================
+
+export interface LoteInventario {
+  id: string;
+  numeroLote: string;
+  nombreComercial: string;
+  medidaX1: number;
+  medidaX2: number;
+  medidaY1: number;
+  areaM2: number;
+  varasCuadradas: number;
+  precioM2: number;
+  precioTotal: number;
+  estado: 'disponible' | 'apartado' | 'vendido';
+  clienteAsignadoId?: string;
+  caracteristicas?: string;
+  creadoEn: string;
+}
+
+export interface ProspectoLead {
+  id: string;
+  nombre: string;
+  telefono: string;
+  email?: string;
+  estado: 'nuevo' | 'en_seguimiento' | 'visita_agendada' | 'interesado' | 'convertido' | 'descartado';
+  presupuestoEstimado?: number;
+  loteInteresId?: string;
+  canalOrigen: 'whatsapp' | 'facebook' | 'visita_campo' | 'referido';
+  notasVendedor?: string;
+  ultimoContacto: string;
+  creadoEn: string;
+}
+
+export interface MensajeWhatsApp {
+  id: string;
+  telefono: string;
+  remitente: 'cliente' | 'asistente_gemini';
+  mensaje: string;
+  intencionDetectada?: 'consulta_saldo' | 'cotizar_lote' | 'agendar_visita' | 'reportar_pago' | 'faq';
+  metadataJson?: Record<string, any>;
+  creadoEn: string;
+}
+
+export interface VisitaTerreno {
+  id: string;
+  leadId?: string;
+  nombreVisitante: string;
+  telefono: string;
+  fechaHoraVisita: string;
+  loteInteres?: string;
+  estado: 'programada' | 'completada' | 'reprogramada' | 'cancelada';
+  anfitrionVendedor: string;
+  notas?: string;
+  creadoEn: string;
+}
+
+// ==========================================
+// ARQUITECTURA MULTI-AGENTE: 3 NIVELES
+// ==========================================
+
+export interface DictamenNivel2Topografo {
+  dictamenValido: boolean;
+  geometriaTipo: 'regular' | 'trapezoidal' | 'irregular';
+  areaOficialM2: number;
+  varasCuadradas: number;
+  linderosValidados: {
+    frenteX1: number;
+    fondoX2: number;
+    profundidadY1: number;
+  };
+  observacionesTecnicas: string[];
+  riesgoDeslizamientoODrenaje: 'bajo' | 'medio' | 'alto';
+  resumenPericial: string;
+}
+
+export interface DictamenNivel2Financiero {
+  financiamientoViable: boolean;
+  precioTotalCalculado: number;
+  engancheSugerido: number;
+  montoFinanciado: number;
+  cuotaMensualCalculada: number;
+  tasaAnual: number;
+  plazoMeses: number;
+  alertasFinancieras: string[];
+  resumenActuarial: string;
+}
+
+export interface DictamenNivel3Auditor {
+  aprobado: boolean;
+  politicaFailClosed: 'APROBADO_PASO' | 'BLOQUEO_FAIL_CLOSED';
+  toleranciaGeometricaMm: number;
+  discrepanciaAreaM2: number;
+  erroresCriticos: string[];
+  firmadoDigitalmente: boolean;
+  tokenCertificacion?: string;
+  fechaAuditoria: string;
+}
+
+export interface AuditoriaMultiAgenteResultado {
+  nivel1Orquestador: {
+    idProceso: string;
+    timestamp: string;
+    estado: 'completado' | 'bloqueado';
+    resumenEjecutivo: string;
+  };
+  nivel2Topografo: DictamenNivel2Topografo;
+  nivel2Financiero: DictamenNivel2Financiero;
+  nivel3Auditor: DictamenNivel3Auditor;
+}
+
+
