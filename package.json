@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "test": "tsx scripts/run-500-tests.ts",
     "deploy:celular": "npm run build && git add . && git commit -m \"auto-deploy: celular\" && git push origin main"
   },
   "dependencies": {
