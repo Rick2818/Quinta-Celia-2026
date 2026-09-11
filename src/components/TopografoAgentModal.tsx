@@ -51,9 +51,9 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
   const [certificacionEmitida, setCertificacionEmitida] = useState(false);
   const [auditoriaData, setAuditoriaData] = useState<AuditoriaMultiAgenteResultado | null>(null);
 
-  // WhatsApp Agent Simulator State
-  const [waTelefono, setWaTelefono] = useState('+503 7890-1234');
-  const [waTipoUsuario, setWaTipoUsuario] = useState<'cliente_actual' | 'prospecto'>('cliente_actual');
+  // WhatsApp Agent Simulator State (Línea Oficial: 7574-3444)
+  const [waTelefono, setWaTelefono] = useState('+503 7574-3444');
+  const [waTipoUsuario, setWaTipoUsuario] = useState<'cliente_actual' | 'prospecto'>('prospecto');
   const [waMensajeInput, setWaMensajeInput] = useState('');
   const [waCargando, setWaCargando] = useState(false);
   const [waHistorial, setWaHistorial] = useState<Array<{
@@ -544,9 +544,21 @@ export const TopografoAgentModal: React.FC<TopografoAgentModalProps> = ({
                     onChange={(e) => setWaTipoUsuario(e.target.value as any)}
                     className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="cliente_actual">👤 Comprador Registrado (Tiene Lote)</option>
                     <option value="prospecto">✨ Nuevo Prospecto (Pide Información)</option>
+                    <option value="cliente_actual">👤 Comprador Registrado (Tiene Lote)</option>
                   </select>
+
+                  <a
+                    href="https://wa.me/50375743444?text=Hola,%20quisiera%20informacion%20sobre%20los%20lotes%20campestres%20de%20Quinta%20Celia"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-md transition-all cursor-pointer"
+                    title="Abrir chat en la aplicación oficial de WhatsApp con el 7574-3444"
+                  >
+                    <span>💬</span>
+                    <span>Chat Real 7574-3444</span>
+                    <span>↗</span>
+                  </a>
                 </div>
               </div>
 

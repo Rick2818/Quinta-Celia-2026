@@ -346,6 +346,19 @@ export default function App() {
                 <span className="text-[10px] px-1 py-0.2 rounded bg-emerald-500/30 text-emerald-200 font-mono hidden sm:inline">QR</span>
               </button>
 
+              <a
+                id="btn-nav-whatsapp-leads"
+                href="https://wa.me/50375743444?text=Hola,%20quisiera%20consultar%20sobre%20los%20lotes%20campestres%20de%20Quinta%20Celia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 hover:text-emerald-200 border border-emerald-500/50 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                title="Línea Oficial de WhatsApp para Leads y Cobranzas: 7574-3444"
+              >
+                <span>💬</span>
+                <span className="hidden sm:inline">WhatsApp Leads</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/30 text-emerald-200 font-mono font-bold">7574-3444</span>
+              </a>
+
               <button
                 id="btn-nav-backup"
                 onClick={() => setIsBackupOpen(true)}

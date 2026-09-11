@@ -233,15 +233,16 @@ export async function responderMensajeWhatsApp(params: {
     }
     return {
       intencion: 'cotizar_lote',
-      respuestaMensaje: `¡Hola! Gracias por comunicarte con Quinta Celia 🌲. Tenemos lotes campestres desde $120/mes a 120 meses sin intereses bancarios abusivos. ¿Te gustaría agendar una visita guiada este fin de semana o que te comparta los lotes disponibles?`,
+      respuestaMensaje: `¡Hola! Gracias por comunicarte con Quinta Celia 🌲 al WhatsApp oficial (7574-3444). Tenemos lotes campestres desde $120/mes a 120 meses sin intereses bancarios. ¿Te gustaría agendar una visita guiada este fin de semana o que te comparta los lotes disponibles?`,
       clienteIdentificado: false
     };
   }
 
   // Prompt contextual para Gemini Flash
   const contextoPrompt = `
-Eres la Asistente Virtual Oficial 24/7 de "Quinta Celia - Terrenos Campestres Ricardo" en WhatsApp.
+Eres la Asistente Virtual Oficial 24/7 de "Quinta Celia - Terrenos Campestres Ricardo" en la línea oficial de WhatsApp +503 7574-3444 (75743444).
 Tu tono es cálido, profesional, transparente, empático y conciso (ideal para WhatsApp).
+Línea de atención oficial: WhatsApp 7574-3444 (+503 7574 3444).
 
 Información del interlocutor:
 - Teléfono: ${telefono}
