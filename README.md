@@ -95,7 +95,17 @@ Arquitectura blindada contra caídas y vulnerabilidades:
 
 ---
 
-### 7. ☁️ Arquitectura de Base de Datos en Supabase (Nube 24/7)
+### 7. 📊 Dashboard Interactivo de Estados: Están Pagando, En Mora y Ya Terminaron
+- **Tarjetas Interactivas con 1 Clic:**
+  - **✓ Están Pagando:** Muestra a los compradores activos con mensualidades al corriente, porcentaje de cuotas pagadas (ej. 15/120) y saldo de capital restante, con accesos directos a "Ver Expediente" y "Registrar Pago".
+  - **⚠️ Están en Mora:** Identifica a compradores con cuotas vencidas, calculando el recargo moratorio contractual (3% al 5%), días acumulados de atraso y botón directo para enviar recordatorio de cobro por WhatsApp con mensaje predeterminado.
+  - **🏛️ Ya Terminaron (Liquidados):** Agrupa a quienes completaron el 100% de su plan de financiamiento ($0.00 de saldo restante), facilitando el paso a la emisión de escritura de compraventa definitiva.
+  - **👥 Total Clientes:** Visión general de la cartera completa y filtros instantáneos sincronizados con la base de datos.
+- **Ventana Modal de Detalle Inmediato:** Al presionar cualquiera de los 4 botones se abre una vista detallada sin necesidad de recargar la página ni navegar entre pestañas.
+
+---
+
+### 8. ☁️ Arquitectura de Base de Datos en Supabase (Nube 24/7)
 Base de datos PostgreSQL en la nube con Row Level Security (RLS) verificado:
 1. `clientes_quinta_celia`: Expedientes de compradores, documentos legales (DUI, Promesa, Escritura), lote asignado, financiamiento y topografía pericial.
 2. `pagos_quinta_celia`: Recibos oficiales numerados, abonos a capital, intereses y saldos actualizados.

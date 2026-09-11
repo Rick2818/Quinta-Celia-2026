@@ -31,7 +31,7 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
   monedaSimbolo = '$'
 }) => {
   const [busqueda, setBusqueda] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'activo' | 'liquidado'>('todos');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'al_dia' | 'en_mora' | 'liquidado'>('todos');
   const [isBovedaOpen, setIsBovedaOpen] = useState(false);
   const [tipoDocBoveda, setTipoDocBoveda] = useState<'copiaDui' | 'promesaVenta' | 'escrituraCompraVenta'>('copiaDui');
 
@@ -48,7 +48,14 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
 
   // Filtrado por Nombre, DUI, Lote, Teléfono, etc.
   const clientesFiltrados = clientes.filter(c => {
-    if (filtroEstado !== 'todos' && c.estado !== filtroEstado) return false;
+    if (filtroEstado !== 'todos') {
+      const esLiquidado = c.estado === 'liquidado' || ((c.amortizacion || []).length > 0 && (c.amortizacion || []).filter(a => a.estado !== 'pagado').length === 0);
+      const esMora = c.estado === 'en_mora' || (c.amortizacion || []).some(a => a.estado === 'vencido');
+      
+      if (filtroEstado === 'liquidado' && !esLiquidado) return false;
+      if (filtroEstado === 'en_mora' && (!esMora || esLiquidado)) return false;
+      if (filtroEstado === 'al_dia' && (esLiquidado || esMora)) return false;
+    }
     if (busqueda) {
       const q = busqueda.toLowerCase().trim();
       const qNorm = normalizar(busqueda);
@@ -134,18 +141,27 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
               )}
             </div>
 
-            <div className="flex gap-1 text-[11px]">
-              {(['todos', 'activo', 'liquidado'] as const).map(f => (
+            <div className="grid grid-cols-4 gap-1 text-[10px]">
+              {[
+                { id: 'todos', label: 'Todos' },
+                { id: 'al_dia', label: 'Pagando' },
+                { id: 'en_mora', label: 'En Mora' },
+                { id: 'liquidado', label: 'Liquidados' }
+              ].map(f => (
                 <button
-                  key={f}
-                  onClick={() => setFiltroEstado(f)}
-                  className={`flex-1 py-1 rounded-lg font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-                    filtroEstado === f
-                      ? 'bg-emerald-600 text-white'
+                  key={f.id}
+                  onClick={() => setFiltroEstado(f.id as any)}
+                  className={`py-1 rounded-lg font-bold tracking-tight transition-colors cursor-pointer text-center truncate ${
+                    filtroEstado === f.id
+                      ? f.id === 'en_mora'
+                        ? 'bg-rose-600 text-white'
+                        : f.id === 'liquidado'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-emerald-600 text-white'
                       : 'bg-slate-800 text-slate-400 hover:text-white'
                   }`}
                 >
-                  {f}
+                  {f.label}
                 </button>
               ))}
             </div>
@@ -163,6 +179,8 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                 const cuotasPagadas = cliente.amortizacion.filter(c => c.estado === 'pagado').length;
                 const totalCuotas = cliente.amortizacion.length;
                 const porcentaje = Math.round((cuotasPagadas / totalCuotas) * 100);
+                const esLiquidado = cliente.estado === 'liquidado' || ((cliente.amortizacion || []).length > 0 && (cliente.amortizacion || []).filter(a => a.estado !== 'pagado').length === 0);
+                const esMora = cliente.estado === 'en_mora' || (cliente.amortizacion || []).some(a => a.estado === 'vencido');
 
                 return (
                   <div
@@ -189,11 +207,13 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                         </div>
                       </div>
                       <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold shrink-0 ${
-                        cliente.estado === 'liquidado'
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                          : 'bg-amber-950 text-amber-300 border border-amber-700'
+                        esLiquidado
+                          ? 'bg-purple-950 text-purple-300 border border-purple-700'
+                          : esMora
+                          ? 'bg-rose-950 text-rose-300 border border-rose-700'
+                          : 'bg-emerald-950 text-emerald-300 border border-emerald-700'
                       }`}>
-                        {cliente.estado === 'liquidado' ? 'LIQUIDADO' : `${cuotasPagadas}/${totalCuotas} m`}
+                        {esLiquidado ? 'LIQUIDADO' : esMora ? 'EN MORA' : `${cuotasPagadas}/${totalCuotas} m`}
                       </span>
                     </div>
 
