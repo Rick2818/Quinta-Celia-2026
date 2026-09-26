@@ -4,6 +4,7 @@ import { formatMoneda } from '../utils/calculos';
 import { TablaAmortizacion } from './TablaAmortizacion';
 import { VisorTerreno2D } from './VisorTerreno2D';
 import { BovedaDocumentosModal } from './BovedaDocumentosModal';
+import { EstadoCuentaModal } from './EstadoCuentaModal';
 
 interface ControlPagosClientesProps {
   clientes: ClienteComprador[];
@@ -34,6 +35,7 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'al_dia' | 'en_mora' | 'liquidado'>('todos');
   const [isBovedaOpen, setIsBovedaOpen] = useState(false);
   const [tipoDocBoveda, setTipoDocBoveda] = useState<'copiaDui' | 'promesaVenta' | 'escrituraCompraVenta'>('copiaDui');
+  const [isEstadoCuentaOpen, setIsEstadoCuentaOpen] = useState(false);
 
   const handleAbrirBoveda = (tipo: 'copiaDui' | 'promesaVenta' | 'escrituraCompraVenta' = 'copiaDui') => {
     setTipoDocBoveda(tipo);
@@ -263,6 +265,14 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setIsEstadoCuentaOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs shadow-md shadow-sky-500/20 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                      title="Ver e imprimir Estado de Cuenta oficial del cliente con condiciones del crédito y saldo a la fecha"
+                    >
+                      <span>📄</span>
+                      <span>Estado de Cuenta</span>
+                    </button>
                     <button
                       onClick={() => onRegistrarPagoClick(clienteActivo)}
                       className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer transition-colors"
@@ -597,6 +607,16 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
               onActualizarDocumentos(clienteId, docs);
             }
           }}
+        />
+      )}
+
+      {/* Modal Estado de Cuenta */}
+      {clienteActivo && isEstadoCuentaOpen && (
+        <EstadoCuentaModal
+          isOpen={isEstadoCuentaOpen}
+          onClose={() => setIsEstadoCuentaOpen(false)}
+          cliente={clienteActivo}
+          monedaSimbolo={monedaSimbolo}
         />
       )}
 

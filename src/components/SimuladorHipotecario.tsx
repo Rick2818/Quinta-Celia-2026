@@ -486,7 +486,9 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
                     120 Meses Fijo
                   </span>
                 </label>
-                <span className="font-mono text-amber-400 font-bold text-xs">{plazoMeses} Meses (10 Años)</span>
+                <span className="font-mono text-amber-400 font-bold text-xs">
+                  {plazoMeses} Meses ({plazoMeses % 12 === 0 ? plazoMeses / 12 : (plazoMeses / 12).toFixed(1)} Años)
+                </span>
               </div>
               <div className="grid grid-cols-6 gap-1">
                 {[12, 24, 36, 60, 84, 120].map(m => (

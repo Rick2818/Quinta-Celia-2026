@@ -51,7 +51,7 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
   // Financiamiento
   const [precioTotal, setPrecioTotal] = useState<number>(datosIniciales?.precioTotal || 25000);
   const [enganche, setEnganche] = useState<number>(datosIniciales?.enganche || 5000);
-  const [plazoMeses, setPlazoMeses] = useState<number>(datosIniciales?.plazoMeses || 36);
+  const [plazoMeses, setPlazoMeses] = useState<number>(datosIniciales?.plazoMeses || 120);
   const [tasaInteresAnual, setTasaInteresAnual] = useState<number>(datosIniciales?.tasaInteresAnual || 9.5);
   const [fechaInicio, setFechaInicio] = useState<string>(new Date().toISOString().split('T')[0]);
 
@@ -388,16 +388,16 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
                 </label>
                 <select
                   value={plazoMeses}
-                  onChange={(e) => setPlazoMeses(parseInt(e.target.value) || 12)}
+                  onChange={(e) => setPlazoMeses(parseInt(e.target.value) || 120)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white font-mono"
                 >
-                  <option value={12}>12 Meses</option>
-                  <option value={24}>24 Meses</option>
-                  <option value={36}>36 Meses</option>
-                  <option value={48}>48 Meses</option>
-                  <option value={60}>60 Meses</option>
-                  <option value={84}>84 Meses</option>
-                  <option value={120}>120 Meses</option>
+                  <option value={120}>120 Meses (10 Años) - Predeterminado</option>
+                  <option value={84}>84 Meses (7 Años)</option>
+                  <option value={60}>60 Meses (5 Años)</option>
+                  <option value={48}>48 Meses (4 Años)</option>
+                  <option value={36}>36 Meses (3 Años)</option>
+                  <option value={24}>24 Meses (2 Años)</option>
+                  <option value={12}>12 Meses (1 Año)</option>
                 </select>
               </div>
 

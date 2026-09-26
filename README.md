@@ -105,7 +105,20 @@ Arquitectura blindada contra caídas y vulnerabilidades:
 
 ---
 
-### 8. ☁️ Arquitectura de Base de Datos en Supabase (Nube 24/7)
+### 8. 📄 Módulo de Estado de Cuenta Oficial (Sin Intereses, Plazos 5, 7 y 10 Años)
+- **Nuevo Botón en Expediente:** Acceso directo con 1 clic en la Cartera de Clientes.
+- **Condiciones Claras del Crédito:**
+  - Desglose de **Precio Total**, **Prima / Enganche** ($ y %), **Crédito Financiado**, **Plazo en Años/Meses** y **Cuota Mensual Fija**.
+  - **Cero Tasa de Interés:** Presentación 100% transparente para el comprador sin desglosar porcentajes de interés.
+- **Soporte Dinámico de Contratos:** Adaptado para clientes con financiamiento a **5 Años (60 Meses)**, **7 Años (84 Meses)** o **10 Años (120 Meses)**.
+- **Conteo de Pagos & Saldo a la Fecha:** Monitorea en tiempo real las cuotas pagadas (ej. *14 de 120 cuotas*), cuotas pendientes y el **Saldo Restante Exacto**.
+- **Herramientas de Despacho:**
+  - 🖨️ **Impresión / PDF:** Formato membretado oficial listo para imprimir.
+  - 📲 **WhatsApp en 1 Clic:** Envío de resumen con saldo formateado directo al móvil del comprador.
+
+---
+
+### 9. ☁️ Arquitectura de Base de Datos en Supabase (Nube 24/7)
 Base de datos PostgreSQL en la nube con Row Level Security (RLS) verificado:
 1. `clientes_quinta_celia`: Expedientes de compradores, documentos legales (DUI, Promesa, Escritura), lote asignado, financiamiento y topografía pericial.
 2. `pagos_quinta_celia`: Recibos oficiales numerados, abonos a capital, intereses y saldos actualizados.
