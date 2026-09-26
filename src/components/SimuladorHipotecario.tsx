@@ -10,6 +10,8 @@ import { VisorTerreno2D } from './VisorTerreno2D';
 interface SimuladorHipotecarioProps {
   medidasTopograficas: MedidasTerreno;
   onAbrirTopografo: () => void;
+  onIrACarteraClientes?: () => void;
+  totalClientes?: number;
   onCrearClienteConSimulacion: (datosSimulacion: {
     medidas: MedidasTerreno;
     precioM2: number;
@@ -27,6 +29,8 @@ interface SimuladorHipotecarioProps {
 export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
   medidasTopograficas,
   onAbrirTopografo,
+  onIrACarteraClientes,
+  totalClientes = 0,
   onCrearClienteConSimulacion
 }) => {
   // Lotes preconfigurados Finca Celia
@@ -180,13 +184,26 @@ export const SimuladorHipotecario: React.FC<SimuladorHipotecarioProps> = ({
             </p>
           </div>
 
-          <button
-            onClick={onAbrirTopografo}
-            className="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm"
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-            <span>Ajustar Medidas con Topógrafo (x1, x2, y1)</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {onIrACarteraClientes && (
+              <button
+                onClick={onIrACarteraClientes}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-95"
+                title="Ir a Cartera de Clientes para ver estados de cuenta y registrar pagos"
+              >
+                <span>👥</span>
+                <span>Cartera de Clientes ({totalClientes})</span>
+              </button>
+            )}
+
+            <button
+              onClick={onAbrirTopografo}
+              className="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+              <span>Ajustar Medidas con Topógrafo</span>
+            </button>
+          </div>
         </div>
 
         {/* Lotes Preconfigurados */}

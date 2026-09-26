@@ -288,7 +288,7 @@ export default function App() {
               <button
                 id="btn-tab-simulador"
                 onClick={() => setPestañaActiva('simulador')}
-                className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                   pestañaActiva === 'simulador'
                     ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-bold'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -301,14 +301,17 @@ export default function App() {
               <button
                 id="btn-tab-clientes"
                 onClick={() => setPestañaActiva('clientes')}
-                className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                   pestañaActiva === 'clientes'
                     ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-bold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    : 'text-slate-300 hover:text-white bg-slate-800/80 border border-slate-700/80 hover:bg-slate-700'
                 }`}
               >
                 <span>👥</span>
-                <span>Control de Pagos ({clientes.length})</span>
+                <span className="font-bold text-white">Cartera de Clientes</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 font-bold">
+                  {clientes.length}
+                </span>
               </button>
 
               <button
@@ -338,58 +341,17 @@ export default function App() {
               </button>
             </div>
 
-            {/* Right Tools (Mobile QR, WhatsApp, Backup, and paired Client Buttons) */}
+            {/* Right Tools (Mobile QR & Settings) */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 id="btn-nav-acceso-movil"
                 onClick={() => setIsAccesoMovilOpen(true)}
-                className="px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
                 title="Generar código QR y enlace de acceso directo para celulares en el terreno"
               >
                 <span>📱</span>
-                <span className="hidden lg:inline">Acceso Celular</span>
-                <span className="text-[10px] px-1 py-0.2 rounded bg-emerald-500/30 text-emerald-200 font-mono">QR</span>
+                <span>Acceso Celular QR</span>
               </button>
-
-              <a
-                id="btn-nav-whatsapp-leads"
-                href="https://wa.me/50375743444?text=Hola,%20quisiera%20consultar%20sobre%20los%20lotes%20campestres%20de%20Quinta%20Celia"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 hover:text-emerald-200 border border-emerald-500/50 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
-                title="Línea Oficial de WhatsApp para Leads y Cobranzas: 7574-3444"
-              >
-                <span>💬</span>
-                <span className="hidden lg:inline">WhatsApp Leads</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/30 text-emerald-200 font-mono font-bold">7574-3444</span>
-              </a>
-
-
-              {/* Botones a la par: Cliente Existente y Nuevo Cliente */}
-              <div className="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-xl border border-slate-800">
-                <button
-                  id="btn-nav-buscar-cliente"
-                  onClick={() => setIsBuscarClienteOpen(true)}
-                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
-                  title="Buscar o seleccionar cliente existente por Nombre o DUI (Ctrl+K)"
-                >
-                  <span>👤</span>
-                  <span>Cliente Existente</span>
-                </button>
-
-                <button
-                  id="btn-nav-nuevo-cliente"
-                  onClick={() => {
-                    setDatosSimulacionPrellenados(null);
-                    setIsNuevoClienteOpen(true);
-                  }}
-                  className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
-                  title="Registrar un nuevo cliente o comprador"
-                >
-                  <span>+</span>
-                  <span>Nuevo Cliente</span>
-                </button>
-              </div>
             </div>
 
           </div>
@@ -421,6 +383,8 @@ export default function App() {
               setTopografoClienteNombre(undefined);
               setIsTopografoOpen(true);
             }}
+            onIrACarteraClientes={() => setPestañaActiva('clientes')}
+            totalClientes={clientes.length}
             onCrearClienteConSimulacion={handleProcederDesdeSimulador}
           />
         )}
@@ -430,6 +394,7 @@ export default function App() {
             clientes={clientes}
             clienteSeleccionadoId={clienteSeleccionadoId}
             onSeleccionarCliente={(id) => setClienteSeleccionadoId(id)}
+            onVolverPantallaPrincipal={() => setPestañaActiva('simulador')}
             onNuevoClienteClick={() => {
               setDatosSimulacionPrellenados(null);
               setIsNuevoClienteOpen(true);

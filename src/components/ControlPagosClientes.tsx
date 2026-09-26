@@ -10,6 +10,7 @@ interface ControlPagosClientesProps {
   clientes: ClienteComprador[];
   clienteSeleccionadoId?: string;
   onSeleccionarCliente: (id: string) => void;
+  onVolverPantallaPrincipal?: () => void;
   onNuevoClienteClick: () => void;
   onBuscarClienteClick?: () => void;
   onRegistrarPagoClick: (cliente: ClienteComprador, mes?: number) => void;
@@ -23,6 +24,7 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
   clientes,
   clienteSeleccionadoId,
   onSeleccionarCliente,
+  onVolverPantallaPrincipal,
   onNuevoClienteClick,
   onBuscarClienteClick,
   onRegistrarPagoClick,
@@ -75,6 +77,50 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
     return true;
   });
 
+  const handleEnviarWhatsAppDirecto = (cliente: ClienteComprador) => {
+    const amort = cliente.amortizacion || [];
+    const cuotasPag = amort.filter(c => c.estado === 'pagado').length;
+    const totCuotas = amort.length || cliente.plazoMeses || 120;
+    const cuotasPend = Math.max(0, totCuotas - cuotasPag);
+    const plazoAnos = cliente.plazoMeses ? (cliente.plazoMeses / 12) : 10;
+    const plazoTxt = Number.isInteger(plazoAnos) ? `${plazoAnos} Años (${totCuotas} Meses)` : `${plazoAnos.toFixed(1)} Años (${totCuotas} Meses)`;
+    const totAbonado = (cliente.enganche || 0) + amort.filter(c => c.estado === 'pagado').reduce((acc, curr) => acc + (curr.cuota || 0), 0);
+    let saldo = cliente.montoFinanciado;
+    const ultPag = [...amort].reverse().find(c => c.estado === 'pagado');
+    if (ultPag) saldo = ultPag.saldoFinal;
+    if (cuotasPag >= totCuotas && totCuotas > 0) saldo = 0;
+    const pct = totCuotas > 0 ? Math.round((cuotasPag / totCuotas) * 100) : 0;
+    const esLiq = saldo <= 0 || cuotasPag >= totCuotas || cliente.estado === 'liquidado';
+    const esM = !esLiq && (cliente.estado === 'en_mora' || amort.some(a => a.estado === 'vencido'));
+
+    const msg = `📋 *ESTADO DE CUENTA OFICIAL - FINCA CELIA*
+*Titular:* ${cliente.nombre}
+*DUI:* ${cliente.cedula || 'Registrado'}
+*Inmueble:* ${cliente.loteNombre} (Lote #${cliente.loteNumero})
+*Área:* ${cliente.medidas.areaM2} m² (${cliente.medidas.varasCuadradas} v²)
+
+📌 *CONDICIONES DEL CRÉDITO:*
+• *Precio Total:* ${formatMoneda(cliente.precioTotal)}
+• *Prima / Enganche Pagado:* ${formatMoneda(cliente.enganche)} (${cliente.enganchePorcentaje || 20}%)
+• *Crédito Pactado:* ${formatMoneda(cliente.montoFinanciado)}
+• *Plazo Pactado:* ${plazoTxt}
+• *Cuota Mensual Fija:* ${formatMoneda(cliente.cuotaMensual)}
+
+📊 *RESUMEN DE PAGOS A LA FECHA:*
+• *Pagos Realizados:* ${cuotasPag} de ${totCuotas} cuotas (${pct}%)
+• *Cuotas Pendientes:* ${cuotasPend} meses
+• *Total Pagado a la Fecha:* ${formatMoneda(totAbonado)}
+• *SALDO ACTUAL A LA FECHA:* ${formatMoneda(saldo)}
+• *Estado Actual:* ${esLiq ? '✅ LIQUIDADO TOTALMENTE' : esM ? '⚠️ CUOTA EN MORA' : '✅ AL DÍA'}
+
+_Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
+
+    let rawTel = (cliente.telefono || '').replace(/[^0-9]/g, '');
+    if (rawTel.length === 8) rawTel = `503${rawTel}`;
+    const url = rawTel ? `https://wa.me/${rawTel}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="space-y-6">
       
@@ -92,28 +138,17 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {onBuscarClienteClick && (
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {onVolverPantallaPrincipal && (
             <button
-              onClick={onBuscarClienteClick}
-              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0 active:scale-95"
-              title="Buscar o seleccionar cliente existente por Nombre o DUI"
+              onClick={onVolverPantallaPrincipal}
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 hover:border-slate-600 flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0 active:scale-95 shadow-md"
+              title="Volver a la pantalla principal / Módulo Administrativo"
             >
-              <span>👤</span>
-              <span>Cliente Existente</span>
+              <span>🏠</span>
+              <span>Pantalla Principal</span>
             </button>
           )}
-
-          <button
-            onClick={onNuevoClienteClick}
-            className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0 active:scale-95"
-            title="Registrar un nuevo cliente o comprador"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Nuevo Cliente</span>
-          </button>
         </div>
       </div>
 
@@ -272,6 +307,14 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
                     >
                       <span>📄</span>
                       <span>Estado de Cuenta</span>
+                    </button>
+                    <button
+                      onClick={() => handleEnviarWhatsAppDirecto(clienteActivo)}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                      title="Enviar Estado de Cuenta con saldo y pagos directo al WhatsApp del comprador"
+                    >
+                      <span>📲</span>
+                      <span>WhatsApp</span>
                     </button>
                     <button
                       onClick={() => onRegistrarPagoClick(clienteActivo)}
