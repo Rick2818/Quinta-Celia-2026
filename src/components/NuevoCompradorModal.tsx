@@ -37,8 +37,10 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
   // Estado del formulario
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
+  const [telefonoFijo, setTelefonoFijo] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [direccion, setDireccion] = useState('Valle de Zapotitán / Coatepeque');
+  const [celular2, setCelular2] = useState('');
+  const [direccion, setDireccion] = useState('');
   const [cedula, setCedula] = useState('');
   const [loteNombre, setLoteNombre] = useState(datosIniciales?.loteNombre || 'Lote Campestre Quinta Celia');
   const [loteNumero, setLoteNumero] = useState(datosIniciales?.loteNumero || '01');
@@ -102,7 +104,7 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre.trim() || !email.trim()) return;
+    if (!nombre.trim()) return;
 
     // Generar tabla de amortización para este cliente
     const amortizacion = generarTablaAmortizacion(
@@ -117,6 +119,8 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
       nombre: nombre.trim(),
       email: email.trim(),
       telefono: telefono.trim(),
+      telefonoFijo: telefonoFijo.trim(),
+      celular2: celular2.trim(),
       direccion: direccion.trim(),
       cedula: cedula.trim(),
       loteNombre: loteNombre.trim(),
@@ -165,10 +169,10 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
             </div>
             <div>
               <h3 className="text-white font-display font-bold text-base">
-                Registrar Nuevo Comprador / Lead
+                Cliente Nuevo
               </h3>
               <p className="text-xs text-slate-400">
-                Guarda datos de contacto y formaliza el plan de financiamiento
+                Registra los datos personales y de contacto del nuevo cliente
               </p>
             </div>
           </div>
@@ -219,47 +223,73 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">
-                  Número de Celular / WhatsApp *:
+                  Número de Teléfono Fijo:
                 </label>
                 <input
                   type="tel"
-                  required
-                  value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
-                  placeholder="Ej: +503 7988-1234"
+                  value={telefonoFijo}
+                  onChange={(e) => setTelefonoFijo(e.target.value)}
+                  placeholder="Ej: 2222-1234"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">
-                  Correo Electrónico (Para envío de recibos) *:
+                  Celular 1:
+                </label>
+                <input
+                  type="tel"
+                  value={telefono}
+                  onChange={(e) => setTelefono(e.target.value)}
+                  placeholder="Ej: 7988-1234"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Celular 2:
+                </label>
+                <input
+                  type="tel"
+                  value={celular2}
+                  onChange={(e) => setCelular2(e.target.value)}
+                  placeholder="Ej: 7123-4567"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Correo Electrónico (Opcional):
                 </label>
                 <input
                   type="email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="comprador@correo.com"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">
-                Dirección Residencial o Domicilio:
-              </label>
-              <input
-                type="text"
-                value={direccion}
-                onChange={(e) => setDireccion(e.target.value)}
-                placeholder="Ej: Col. Las Victorias, Calle Los Abetos #12"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              />
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Dirección de Casa:
+                </label>
+                <input
+                  type="text"
+                  value={direccion}
+                  onChange={(e) => setDireccion(e.target.value)}
+                  placeholder="Ej: Col. Las Victorias, Calle Los Abetos #12"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
             </div>
           </div>
 
