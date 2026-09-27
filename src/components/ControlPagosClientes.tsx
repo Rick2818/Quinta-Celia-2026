@@ -68,6 +68,8 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
         normalizar(c.nombre).includes(qNorm) ||
         (c.cedula && (c.cedula.toLowerCase().includes(q) || normalizar(c.cedula).includes(qNorm))) ||
         (c.telefono && (c.telefono.toLowerCase().includes(q) || normalizar(c.telefono).includes(qNorm))) ||
+        (c.telefonoFijo && (c.telefonoFijo.toLowerCase().includes(q) || normalizar(c.telefonoFijo).includes(qNorm))) ||
+        (c.celular2 && (c.celular2.toLowerCase().includes(q) || normalizar(c.celular2).includes(qNorm))) ||
         (c.email && c.email.toLowerCase().includes(q)) ||
         (c.loteNombre && c.loteNombre.toLowerCase().includes(q)) ||
         (c.loteNumero && c.loteNumero.toLowerCase().includes(q)) ||
@@ -139,6 +141,15 @@ _Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={onNuevoClienteClick}
+            className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs border border-emerald-400 flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0 active:scale-95 shadow-md shadow-emerald-500/20"
+            title="Registrar un cliente nuevo"
+          >
+            <span>➕</span>
+            <span>Cliente Nuevo</span>
+          </button>
+
           {onVolverPantallaPrincipal && (
             <button
               onClick={onVolverPantallaPrincipal}
@@ -349,8 +360,11 @@ _Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
                   {/* Contacto */}
                   <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Contacto & Correo</span>
+                    {clienteActivo.telefonoFijo && (
+                      <p className="text-slate-300">☎️ {clienteActivo.telefonoFijo}</p>
+                    )}
                     <p className="text-slate-200 flex items-center justify-between">
-                      <span>📱 {clienteActivo.telefono}</span>
+                      <span>📱 {clienteActivo.telefono || 'Sin celular'}</span>
                       {clienteActivo.telefono && (
                         <a
                           href={`https://wa.me/${clienteActivo.telefono.replace(/[^0-9]/g, '')}`}
@@ -362,7 +376,10 @@ _Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
                         </a>
                       )}
                     </p>
-                    <p className="text-slate-300 font-mono truncate">✉️ {clienteActivo.email}</p>
+                    {clienteActivo.celular2 && (
+                      <p className="text-slate-300">📱 {clienteActivo.celular2}</p>
+                    )}
+                    <p className="text-slate-300 font-mono truncate">✉️ {clienteActivo.email || 'Sin correo'}</p>
                     <p className="text-slate-400 truncate">📍 {clienteActivo.direccion || 'Quinta Celia'}</p>
                   </div>
 
