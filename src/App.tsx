@@ -120,6 +120,7 @@ export default function App() {
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isNuevoClienteOpen, setIsNuevoClienteOpen] = useState(false);
   const [datosSimulacionPrellenados, setDatosSimulacionPrellenados] = useState<any>(null);
+  const [clienteParaEditar, setClienteParaEditar] = useState<ClienteComprador | null>(null);
 
   const [isRegistroPagoOpen, setIsRegistroPagoOpen] = useState(false);
   const [clienteParaPago, setClienteParaPago] = useState<ClienteComprador | null>(null);
@@ -210,10 +211,17 @@ export default function App() {
 
   // Handlers
   const handleGuardarNuevoCliente = async (nuevoCliente: ClienteComprador) => {
-    setClientes(prev => [nuevoCliente, ...prev]);
+    setClientes(prev => {
+      const existe = prev.some(c => c.id === nuevoCliente.id);
+      return existe
+        ? prev.map(c => c.id === nuevoCliente.id ? nuevoCliente : c)
+        : [nuevoCliente, ...prev];
+    });
     setClienteSeleccionadoId(nuevoCliente.id);
     setPestañaActiva('clientes');
-    mostrarNotificacion(`✓ Comprador "${nuevoCliente.nombre}" registrado exitosamente.`);
+    mostrarNotificacion(clienteParaEditar
+      ? `✓ Cliente "${nuevoCliente.nombre}" actualizado exitosamente.`
+      : `✓ Comprador "${nuevoCliente.nombre}" registrado exitosamente.`);
 
     if (supabaseConfig.conectado) {
       const res = await guardarClienteEnSupabase(supabaseConfig, nuevoCliente);
@@ -221,6 +229,8 @@ export default function App() {
         mostrarNotificacion(`✓ Cliente respaldado en Supabase.`);
       }
     }
+
+    setClienteParaEditar(null);
   };
 
   const handleGuardarPago = async (nuevoPago: PagoRealizado, clienteActualizado: ClienteComprador) => {
@@ -396,6 +406,12 @@ export default function App() {
             onSeleccionarCliente={(id) => setClienteSeleccionadoId(id)}
             onVolverPantallaPrincipal={() => setPestañaActiva('simulador')}
             onNuevoClienteClick={() => {
+              setClienteParaEditar(null);
+              setDatosSimulacionPrellenados(null);
+              setIsNuevoClienteOpen(true);
+            }}
+            onEditarClienteClick={(cliente) => {
+              setClienteParaEditar(cliente);
               setDatosSimulacionPrellenados(null);
               setIsNuevoClienteOpen(true);
             }}
@@ -484,8 +500,12 @@ export default function App() {
       {/* 3. Nuevo Comprador / Lead Modal */}
       <NuevoCompradorModal
         isOpen={isNuevoClienteOpen}
-        onClose={() => setIsNuevoClienteOpen(false)}
+        onClose={() => {
+          setIsNuevoClienteOpen(false);
+          setClienteParaEditar(null);
+        }}
         datosIniciales={datosSimulacionPrellenados}
+        clienteEditar={clienteParaEditar}
         onGuardarCliente={handleGuardarNuevoCliente}
         onAbrirTopografo={() => {
           setIsTopografoOpen(true);
