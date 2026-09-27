@@ -39,6 +39,11 @@ export const RegistroPagoModal: React.FC<RegistroPagoModalProps> = ({
   // Campos 100% manuales: el sistema NO calcula cuota, tasa ni plazo.
   const [mesPagoManual, setMesPagoManual] = useState<number>(mesInicial);
   const [plazoMesesManual, setPlazoMesesManual] = useState<number>(cliente.plazoMeses || 0);
+
+  // El selector de cuota respeta el plazo pactado en la Promesa de Venta.
+  // Nunca muestra más de 120 cuotas.
+  const maxCuotasContrato = Math.min(120, Math.max(1, Number(cliente.plazoMeses) || 120));
+  const opcionesCuota = Array.from({ length: maxCuotasContrato }, (_, i) => i + 1);
   const [cuotaManual, setCuotaManual] = useState<number>(itemInicial?.cuota ?? cliente.cuotaMensual ?? 0);
   const [tasaInteresManual, setTasaInteresManual] = useState<number>(cliente.tasaInteresAnual ?? 0);
   const [abonoCapitalManual, setAbonoCapitalManual] = useState<number>(itemInicial?.capital ?? 0);
@@ -284,14 +289,21 @@ export const RegistroPagoModal: React.FC<RegistroPagoModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-300 font-semibold mb-1">N° de cuota / mes pagado:</label>
-                  <input
-                    type="number"
-                    step="1"
+                  <label className="block text-xs text-slate-300 font-semibold mb-1">Cuota pagada:</label>
+                  <select
                     value={mesPagoManual}
                     onChange={(e) => setMesPagoManual(Number(e.target.value))}
                     className={inputClass}
-                  />
+                  >
+                    {opcionesCuota.map((n) => (
+                      <option key={n} value={n}>
+                        Cuota {n}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Contrato: {maxCuotasContrato} cuotas máximas según la Promesa de Venta.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs text-slate-300 font-semibold mb-1">Saldo restante ({monedaSimbolo}):</label>
