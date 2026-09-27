@@ -147,7 +147,7 @@ _Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
             </button>
 
             <button
-              onClick={handleCompartirWhatsApp}
+              onClick={() => handleCompartirWhatsApp()}
               className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
               title="Enviar resumen directo al WhatsApp del cliente"
             >
@@ -486,7 +486,7 @@ _Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleCompartirWhatsApp}
+              onClick={() => handleCompartirWhatsApp()}
               className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
             >
               <span>📲 Enviar a WhatsApp</span>

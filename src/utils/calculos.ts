@@ -217,19 +217,19 @@ ALTER TABLE public.clientes_quinta_celia ADD COLUMN IF NOT EXISTS datos_json JSO
 
 -- 2. Tabla de Pagos de Cuotas y Recibos
 CREATE TABLE IF NOT EXISTS public.pagos_quinta_celia (
-  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  id TEXT PRIMARY KEY,
   recibo_numero TEXT UNIQUE NOT NULL,
-  cliente_id TEXT,
+  cliente_id TEXT REFERENCES public.clientes_quinta_celia(id) ON DELETE CASCADE,
+  cliente_nombre TEXT NOT NULL,
   mes_numero INT NOT NULL,
   monto_total NUMERIC(12,2) NOT NULL,
   abono_capital NUMERIC(12,2) NOT NULL,
   abono_interes NUMERIC(12,2) NOT NULL,
   saldo_restante NUMERIC(14,2) NOT NULL,
-  fecha_pago TIMESTAMPTZ DEFAULT NOW(),
-  metodo TEXT DEFAULT 'transferencia',
+  fecha_pago TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  metodo TEXT NOT NULL DEFAULT 'transferencia',
   referencia TEXT,
-  enviado_por_email BOOLEAN DEFAULT false,
-  email_destino TEXT,
+  datos_json JSONB,
   creado_en TIMESTAMPTZ DEFAULT NOW()
 );
 

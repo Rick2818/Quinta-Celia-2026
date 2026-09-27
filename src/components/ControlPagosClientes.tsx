@@ -14,7 +14,7 @@ interface ControlPagosClientesProps {
   onNuevoClienteClick: () => void;
   onEditarClienteClick?: (cliente: ClienteComprador) => void;
   onBuscarClienteClick?: () => void;
-  onRegistrarPagoClick: (cliente: ClienteComprador, mes?: number) => void;
+  onRegistrarPagoClick: (cliente: ClienteComprador, mes?: number, tipoPago?: 'cuota' | 'capital') => void;
   onVerReciboClick: (pago: PagoRealizado, cliente: ClienteComprador) => void;
   onAbrirTopografoConMedidas: (medidas: MedidasTerreno, clienteNombre?: string) => void;
   onActualizarDocumentos?: (clienteId: string, documentos: NonNullable<ClienteComprador['documentos']>) => void;
@@ -340,14 +340,14 @@ _Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
                       <span>WhatsApp</span>
                     </button>
                     <button
-                      onClick={() => onRegistrarPagoClick(clienteActivo)}
+                      onClick={() => onRegistrarPagoClick(clienteActivo, undefined, 'cuota')}
                       className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer transition-colors"
                     >
                       <span>$</span>
                       <span>Registrar Pago de Cuota</span>
                     </button>
                     <button
-                      onClick={() => onRegistrarPagoClick(clienteActivo)}
+                      onClick={() => onRegistrarPagoClick(clienteActivo, undefined, 'capital')}
                       className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
                       title="Realizar un abono extraordinario para reducir plazo o cuota mensual"
                     >
@@ -640,7 +640,7 @@ _Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
 
                 <TablaAmortizacion
                   cliente={clienteActivo}
-                  onRegistrarPagoClick={(mes) => onRegistrarPagoClick(clienteActivo, mes)}
+                  onRegistrarPagoClick={(mes) => onRegistrarPagoClick(clienteActivo, mes, 'cuota')}
                   onVerReciboClick={(pago) => onVerReciboClick(pago, clienteActivo)}
                   monedaSimbolo={monedaSimbolo}
                 />

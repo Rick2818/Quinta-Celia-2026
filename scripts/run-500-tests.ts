@@ -20,6 +20,7 @@ import {
   generarTablaAmortizacion, 
   formatMoneda 
 } from '../src/utils/calculos';
+import { aplicarPagosHistoricos } from '../src/utils/pagosHistoricos';
 import { ClienteComprador, PagoRealizado, DocumentoExpediente } from '../src/types';
 
 interface TestResult {
@@ -39,7 +40,7 @@ function assert(condition: boolean, suite: string, name: string, errMsg?: string
   }
 }
 
-console.log('🚀 Iniciando suite de 500 pruebas automatizadas en segundo plano...\n');
+console.log('🚀 Iniciando suite de 525 pruebas automatizadas en segundo plano...\n');
 const startTime = Date.now();
 
 // ============================================================================
@@ -272,6 +273,76 @@ for (let i = 1; i <= 50; i++) {
     balanceCorrecto && reciboValido && tablaAmort.length === 120,
     'Flujos End-to-End',
     `Prueba E2E #${i.toString().padStart(2, '0')}: Ciclo completo de cliente a 120 meses. Saldo tras 3 cuotas: $${saldoTras3Pagos.toFixed(2)}`
+  );
+}
+
+// ============================================================================
+// SUITE 8: IMPORTACION HISTORICA DE PAGOS (25 PRUEBAS)
+// ============================================================================
+for (let i = 1; i <= 25; i++) {
+  const cuota = 100 + (i * 10);
+  const plazo = i % 2 === 0 ? 84 : 60;
+  const cuotasPagadas = Math.min(plazo, 1 + (i % 23));
+  const prima = 1000 + (i * 100);
+  const clienteBase: ClienteComprador = {
+    id: `hist-cli-${i}`,
+    nombre: `Cliente Historico ${i}`,
+    email: `historico${i}@fincacelia.com`,
+    telefono: `+503 7600-${String(1000 + i).slice(1)}`,
+    direccion: 'Quinta Celia',
+    cedula: '',
+    loteNombre: `Lote Historico ${i}`,
+    loteNumero: `${i}`,
+    medidas: calcularMedidasTerreno(25, 25, 40),
+    topografoValidado: true,
+    topografoNombre: 'Ing. Celso R. Valdivia',
+    topografoDictamen: 'Medidas certificadas.',
+    topografoFecha: '2024-11-24',
+    precioM2: 0,
+    precioTotal: 0,
+    enganche: 0,
+    enganchePorcentaje: 0,
+    montoFinanciado: 0,
+    plazoMeses: 120,
+    tasaInteresAnual: 9.5,
+    cuotaMensual: 0,
+    fechaInicio: '2024-11-24',
+    estado: 'activo',
+    amortizacion: [],
+    pagos: [],
+    notas: '',
+    creadoEn: '2024-11-24T12:00:00.000Z',
+    actualizadoEn: '2024-11-24T12:00:00.000Z'
+  };
+
+  const actualizado = aplicarPagosHistoricos({
+    cliente: clienteBase,
+    prima,
+    cuotaMensual: cuota,
+    plazoMeses: plazo,
+    cuotasPagadas,
+    fechaPrimeraCuota: '2024-11-24',
+    metodo: 'efectivo',
+    tasaInteresAnual: 0
+  });
+
+  const pagadas = actualizado.amortizacion.filter(c => c.estado === 'pagado');
+  const ultimaPagada = pagadas[pagadas.length - 1];
+  const totalPagado = actualizado.pagos.reduce((acc, pago) => acc + pago.montoTotal, 0);
+
+  assert(
+    actualizado.plazoMeses === plazo &&
+      actualizado.cuotaMensual === cuota &&
+      actualizado.tasaInteresAnual === 0 &&
+      actualizado.enganche === prima &&
+      actualizado.amortizacion.length === plazo &&
+      actualizado.pagos.length === cuotasPagadas &&
+      pagadas.length === cuotasPagadas &&
+      totalPagado === cuota * cuotasPagadas &&
+      ultimaPagada.saldoFinal === (cuota * plazo) - (cuota * cuotasPagadas) &&
+      actualizado.amortizacion[0].fechaPago === '2024-11-24T12:00:00.000Z',
+    'Importacion Historica',
+    `Prueba Hist #${i.toString().padStart(2, '0')}: ${cuotasPagadas}/${plazo} cuotas de $${cuota}`
   );
 }
 

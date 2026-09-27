@@ -7,36 +7,25 @@ const PUBLISHABLE_KEY = 'sb_publishable_VQsDcGd6Lx6nusumq8Fl5A_N5pESetG';
 const supabase = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
 
 async function test() {
-  console.log('Testing Supabase Client...');
+  console.log('Testing Supabase Client (read-only)...');
   
-  // 1. Test Select
   const { data: selectData, error: selectError } = await supabase
     .from('clientes_quinta_celia')
-    .select('*')
+    .select('id,nombre,telefono,lote_nombre')
     .limit(5);
   
-  console.log('SELECT RESULT:', { count: selectData?.length, selectError });
+  console.log('CLIENTES SELECT:', { count: selectData?.length, selectError });
 
-  // 2. Test Insert
-  const { data: insertData, error: insertError } = await supabase
-    .from('clientes_quinta_celia')
-    .upsert({
-      id: 'cliente-nube-verificado',
-      nombre: 'Ricardo (Propietario Quinta Celia)',
-      cedula: '00000000-1',
-      telefono: '+503 7574-3444',
-      lote_nombre: 'El Manantial (Macrolote Campestre)',
-      precio_total: 25000,
-      enganche: 5000,
-      monto_financiado: 20000,
-      cuota_mensual: 247.97,
-      plazo_meses: 120,
-      tasa_interes_anual: 8.5,
-      estado: 'activo'
-    })
-    .select();
+  const { data: pagosData, error: pagosError } = await supabase
+    .from('pagos_quinta_celia')
+    .select('id,recibo_numero,cliente_id,cliente_nombre,monto_total,fecha_pago,datos_json')
+    .limit(5);
 
-  console.log('INSERT RESULT:', { insertData, insertError });
+  console.log('PAGOS SELECT:', { count: pagosData?.length, pagosError });
+
+  if (selectError || pagosError) {
+    process.exitCode = 1;
+  }
 }
 
 test();

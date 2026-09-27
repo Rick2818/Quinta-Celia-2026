@@ -36,6 +36,24 @@ import { BuscarClienteModal } from './components/BuscarClienteModal';
 import { AccesoMovilModal } from './components/AccesoMovilModal';
 import { DashboardReportes } from './components/DashboardReportes';
 
+function mezclarClientesPreservandoLocales(locales: ClienteComprador[], remotos: ClienteComprador[]): ClienteComprador[] {
+  const normalizar = (texto: string) =>
+    (texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+  const resultado = [...remotos];
+  const clavesRemotas = new Set(
+    remotos.flatMap(cliente => [cliente.id, normalizar(cliente.nombre)].filter(Boolean))
+  );
+
+  locales.forEach(clienteLocal => {
+    const clavesLocal = [clienteLocal.id, normalizar(clienteLocal.nombre)].filter(Boolean);
+    if (!clavesLocal.some(clave => clavesRemotas.has(clave))) {
+      resultado.push(clienteLocal);
+    }
+  });
+
+  return resultado;
+}
 
 export default function App() {
   // Navigation Tabs
@@ -125,6 +143,7 @@ export default function App() {
   const [isRegistroPagoOpen, setIsRegistroPagoOpen] = useState(false);
   const [clienteParaPago, setClienteParaPago] = useState<ClienteComprador | null>(null);
   const [mesParaPago, setMesParaPago] = useState<number | undefined>(undefined);
+  const [tipoPagoInicial, setTipoPagoInicial] = useState<'cuota' | 'capital'>('cuota');
 
   const [isReciboOpen, setIsReciboOpen] = useState(false);
   const [pagoParaRecibo, setPagoParaRecibo] = useState<PagoRealizado | null>(null);
@@ -199,8 +218,8 @@ export default function App() {
     if (supabaseConfig.conectado && supabaseConfig.url && supabaseConfig.anonKey) {
       cargarClientesDesdeSupabase(supabaseConfig).then(clientesRemotos => {
         if (clientesRemotos && clientesRemotos.length > 0) {
-          setClientes(clientesRemotos);
-          mostrarNotificacion(`Sincronizados ${clientesRemotos.length} clientes desde Supabase Cloud.`, 'info');
+          setClientes(prev => mezclarClientesPreservandoLocales(prev, clientesRemotos));
+          mostrarNotificacion(`Sincronizados ${clientesRemotos.length} clientes desde Supabase Cloud sin borrar cartera local.`, 'info');
         }
       }).catch(err => console.log('Supabase sync notice:', err));
     }
@@ -416,9 +435,10 @@ export default function App() {
               setIsNuevoClienteOpen(true);
             }}
             onBuscarClienteClick={() => setIsBuscarClienteOpen(true)}
-            onRegistrarPagoClick={(cliente, mes) => {
+            onRegistrarPagoClick={(cliente, mes, tipoPago = 'cuota') => {
               setClienteParaPago(cliente);
               setMesParaPago(mes);
+              setTipoPagoInicial(tipoPago);
               setIsRegistroPagoOpen(true);
             }}
             onVerReciboClick={(pago, cliente) => {
@@ -448,6 +468,7 @@ export default function App() {
             onRegistrarPago={(cliente) => {
               setClienteParaPago(cliente);
               setMesParaPago(undefined);
+              setTipoPagoInicial('cuota');
               setIsRegistroPagoOpen(true);
             }}
           />
@@ -522,6 +543,7 @@ export default function App() {
           }}
           cliente={clienteParaPago}
           mesSugerido={mesParaPago}
+          tipoPagoInicial={tipoPagoInicial}
           totalPagosHistoricos={totalPagosHistoricos}
           onGuardarPago={handleGuardarPago}
           monedaSimbolo={configSistema.monedaSimbolo}
@@ -581,6 +603,7 @@ export default function App() {
         onRegistrarPagoCliente={(cliente) => {
           setClienteParaPago(cliente);
           setMesParaPago(undefined);
+          setTipoPagoInicial('cuota');
           setIsRegistroPagoOpen(true);
         }}
         onNuevoClienteConDatos={(datos) => {

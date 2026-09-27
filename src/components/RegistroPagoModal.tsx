@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { ClienteComprador, PagoRealizado, AmortizacionItem } from '../types';
 import { formatMoneda, generarNumeroRecibo } from '../utils/calculos';
@@ -9,6 +9,7 @@ interface RegistroPagoModalProps {
   onClose: () => void;
   cliente: ClienteComprador;
   mesSugerido?: number;
+  tipoPagoInicial?: 'cuota' | 'capital';
   totalPagosHistoricos: number;
   onGuardarPago: (nuevoPago: PagoRealizado, clienteActualizado: ClienteComprador) => void;
   monedaSimbolo?: string;
@@ -19,13 +20,12 @@ export const RegistroPagoModal: React.FC<RegistroPagoModalProps> = ({
   onClose,
   cliente,
   mesSugerido,
+  tipoPagoInicial = 'cuota',
   totalPagosHistoricos,
   onGuardarPago,
   monedaSimbolo = '$',
 }) => {
-  if (!isOpen) return null;
-
-  const [tipoPagoModo, setTipoPagoModo] = useState<'cuota' | 'capital'>('cuota');
+  const [tipoPagoModo, setTipoPagoModo] = useState<'cuota' | 'capital'>(tipoPagoInicial);
 
   const cuotasPagadas = (cliente.amortizacion || []).filter(item => item.estado === 'pagado');
   const primerMesPendiente = (cliente.amortizacion || []).find(item => item.estado !== 'pagado')?.mes || 1;
@@ -58,6 +58,26 @@ export const RegistroPagoModal: React.FC<RegistroPagoModalProps> = ({
   const [referencia, setReferencia] = useState('');
   const [emailNotif, setEmailNotif] = useState(cliente.email || '');
   const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setTipoPagoModo(tipoPagoInicial);
+    setMesPagoManual(mesInicial);
+    setPlazoMesesManual(cliente.plazoMeses || 0);
+    setCuotaManual(itemInicial?.cuota ?? cliente.cuotaMensual ?? 0);
+    setTasaInteresManual(cliente.tasaInteresAnual ?? 0);
+    setAbonoCapitalManual(itemInicial?.capital ?? 0);
+    setAbonoInteresManual(itemInicial?.interes ?? 0);
+    setSaldoRestanteManual(itemInicial?.saldoFinal ?? saldoInsolutoActual);
+    setMontoAbonoCapital(0);
+    setSaldoDespuesAbono(saldoInsolutoActual);
+    setFechaPago(new Date().toISOString().split('T')[0]);
+    setMetodo('transferencia');
+    setReferencia('');
+    setEmailNotif(cliente.email || '');
+    setGuardando(false);
+  }, [isOpen, cliente.id, mesInicial, tipoPagoInicial]);
 
   const celebrar = () => {
     try {
@@ -198,6 +218,8 @@ export const RegistroPagoModal: React.FC<RegistroPagoModalProps> = ({
   };
 
   const inputClass = "w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500";
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">

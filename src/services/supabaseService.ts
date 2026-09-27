@@ -145,8 +145,10 @@ export async function registrarPagoSupabase(pago: PagoRealizado, config: Supabas
   const endpoint = `${cleanUrl}/rest/v1/${config.tableNamePagos || 'pagos_quinta_celia'}`;
 
   const payload = {
+    id: pago.id,
     recibo_numero: pago.reciboNumero,
     cliente_id: pago.clienteId,
+    cliente_nombre: pago.clienteNombre,
     mes_numero: pago.mesNumero,
     monto_total: pago.montoTotal,
     abono_capital: pago.abonoCapital,
@@ -155,8 +157,7 @@ export async function registrarPagoSupabase(pago: PagoRealizado, config: Supabas
     fecha_pago: pago.fechaPago,
     metodo: pago.metodo,
     referencia: pago.referencia,
-    enviado_por_email: pago.enviadoPorEmail,
-    email_destino: pago.emailDestino
+    datos_json: pago
   };
 
   try {
