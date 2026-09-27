@@ -12,6 +12,7 @@ interface ControlPagosClientesProps {
   onSeleccionarCliente: (id: string) => void;
   onVolverPantallaPrincipal?: () => void;
   onNuevoClienteClick: () => void;
+  onEditarClienteClick?: (cliente: ClienteComprador) => void;
   onBuscarClienteClick?: () => void;
   onRegistrarPagoClick: (cliente: ClienteComprador, mes?: number) => void;
   onVerReciboClick: (pago: PagoRealizado, cliente: ClienteComprador) => void;
@@ -26,6 +27,7 @@ export const ControlPagosClientes: React.FC<ControlPagosClientesProps> = ({
   onSeleccionarCliente,
   onVolverPantallaPrincipal,
   onNuevoClienteClick,
+  onEditarClienteClick,
   onBuscarClienteClick,
   onRegistrarPagoClick,
   onVerReciboClick,
@@ -311,6 +313,16 @@ _Módulo Administrativo Finca Celia - Terrenos de Ricardo_`;
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {onEditarClienteClick && (
+                      <button
+                        onClick={() => onEditarClienteClick(clienteActivo)}
+                        className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                        title="Editar la información del cliente seleccionado"
+                      >
+                        <span>✏️</span>
+                        <span>Editar Cliente</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => setIsEstadoCuentaOpen(true)}
                       className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs shadow-md shadow-sky-500/20 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
