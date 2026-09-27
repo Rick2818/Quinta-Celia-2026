@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ClienteComprador, MedidasTerreno } from '../types';
 import { 
   calcularMedidasTerreno, 
@@ -22,6 +22,7 @@ interface NuevoCompradorModalProps {
     loteNumero?: string;
   } | null;
   onGuardarCliente: (cliente: ClienteComprador) => void;
+  clienteEditar?: ClienteComprador | null;
   onAbrirTopografo?: () => void;
 }
 
@@ -30,32 +31,32 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
   onClose,
   datosIniciales,
   onGuardarCliente,
+  clienteEditar = null,
   onAbrirTopografo
 }) => {
-  if (!isOpen) return null;
 
   // Estado del formulario
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefonoFijo, setTelefonoFijo] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [celular2, setCelular2] = useState('');
-  const [direccion, setDireccion] = useState('');
-  const [cedula, setCedula] = useState('');
-  const [loteNombre, setLoteNombre] = useState(datosIniciales?.loteNombre || 'Lote Campestre Quinta Celia');
-  const [loteNumero, setLoteNumero] = useState(datosIniciales?.loteNumero || '01');
+  const [nombre, setNombre] = useState(clienteEditar?.nombre || '');
+  const [email, setEmail] = useState(clienteEditar?.email || '');
+  const [telefonoFijo, setTelefonoFijo] = useState(clienteEditar?.telefonoFijo || '');
+  const [telefono, setTelefono] = useState(clienteEditar?.telefono || '');
+  const [celular2, setCelular2] = useState(clienteEditar?.celular2 || '');
+  const [direccion, setDireccion] = useState(clienteEditar?.direccion || '');
+  const [cedula, setCedula] = useState(clienteEditar?.cedula || '');
+  const [loteNombre, setLoteNombre] = useState(clienteEditar?.loteNombre || datosIniciales?.loteNombre || 'Lote Campestre Quinta Celia');
+  const [loteNumero, setLoteNumero] = useState(clienteEditar?.loteNumero || datosIniciales?.loteNumero || '01');
   
   // Medidas del terreno
-  const [x1, setX1] = useState<number>(datosIniciales?.medidas?.x1 || 20);
-  const [x2, setX2] = useState<number>(datosIniciales?.medidas?.x2 || 20);
-  const [y1, setY1] = useState<number>(datosIniciales?.medidas?.y1 || 30);
+  const [x1, setX1] = useState<number>(clienteEditar?.medidas?.x1 || datosIniciales?.medidas?.x1 || 20);
+  const [x2, setX2] = useState<number>(clienteEditar?.medidas?.x2 || datosIniciales?.medidas?.x2 || 20);
+  const [y1, setY1] = useState<number>(clienteEditar?.medidas?.y1 || datosIniciales?.medidas?.y1 || 30);
 
   // Financiamiento
-  const [precioTotal, setPrecioTotal] = useState<number>(datosIniciales?.precioTotal || 25000);
-  const [enganche, setEnganche] = useState<number>(datosIniciales?.enganche || 5000);
-  const [plazoMeses, setPlazoMeses] = useState<number>(datosIniciales?.plazoMeses || 120);
-  const [tasaInteresAnual, setTasaInteresAnual] = useState<number>(datosIniciales?.tasaInteresAnual || 9.5);
-  const [fechaInicio, setFechaInicio] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [precioTotal, setPrecioTotal] = useState<number>(clienteEditar?.precioTotal || datosIniciales?.precioTotal || 25000);
+  const [enganche, setEnganche] = useState<number>(clienteEditar?.enganche || datosIniciales?.enganche || 5000);
+  const [plazoMeses, setPlazoMeses] = useState<number>(clienteEditar?.plazoMeses || datosIniciales?.plazoMeses || 120);
+  const [tasaInteresAnual, setTasaInteresAnual] = useState<number>(clienteEditar?.tasaInteresAnual || datosIniciales?.tasaInteresAnual || 9.5);
+  const [fechaInicio, setFechaInicio] = useState<string>(clienteEditar?.fechaInicio || new Date().toISOString().split('T')[0]);
 
   // Cálculos dinámicos
   const medidasCalculadas = calcularMedidasTerreno(x1, x2, y1);
@@ -64,11 +65,37 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
   const enganchePorcentaje = precioTotal > 0 ? Math.round((enganche / precioTotal) * 100) : 20;
 
   // Bóveda de Documentos Legales
-  const [docDui, setDocDui] = useState<any>(null);
-  const [docPromesa, setDocPromesa] = useState<any>(null);
-  const [docEscritura, setDocEscritura] = useState<any>(null);
+  const [docDui, setDocDui] = useState<any>(clienteEditar?.documentos?.copiaDui || null);
+  const [docPromesa, setDocPromesa] = useState<any>(clienteEditar?.documentos?.promesaVenta || null);
+  const [docEscritura, setDocEscritura] = useState<any>(clienteEditar?.documentos?.escrituraCompraVenta || null);
   const [procesandoArchivo, setProcesandoArchivo] = useState<string | null>(null);
   const [errorArchivo, setErrorArchivo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setNombre(clienteEditar?.nombre || '');
+    setEmail(clienteEditar?.email || '');
+    setTelefonoFijo(clienteEditar?.telefonoFijo || '');
+    setTelefono(clienteEditar?.telefono || '');
+    setCelular2(clienteEditar?.celular2 || '');
+    setDireccion(clienteEditar?.direccion || '');
+    setCedula(clienteEditar?.cedula || '');
+    setLoteNombre(clienteEditar?.loteNombre || datosIniciales?.loteNombre || 'Lote Campestre Quinta Celia');
+    setLoteNumero(clienteEditar?.loteNumero || datosIniciales?.loteNumero || '01');
+    setX1(clienteEditar?.medidas?.x1 || datosIniciales?.medidas?.x1 || 20);
+    setX2(clienteEditar?.medidas?.x2 || datosIniciales?.medidas?.x2 || 20);
+    setY1(clienteEditar?.medidas?.y1 || datosIniciales?.medidas?.y1 || 30);
+    setPrecioTotal(clienteEditar?.precioTotal || datosIniciales?.precioTotal || 25000);
+    setEnganche(clienteEditar?.enganche || datosIniciales?.enganche || 5000);
+    setPlazoMeses(clienteEditar?.plazoMeses || datosIniciales?.plazoMeses || 120);
+    setTasaInteresAnual(clienteEditar?.tasaInteresAnual || datosIniciales?.tasaInteresAnual || 9.5);
+    setFechaInicio(clienteEditar?.fechaInicio || new Date().toISOString().split('T')[0]);
+    setDocDui(clienteEditar?.documentos?.copiaDui || null);
+    setDocPromesa(clienteEditar?.documentos?.promesaVenta || null);
+    setDocEscritura(clienteEditar?.documentos?.escrituraCompraVenta || null);
+    setErrorArchivo(null);
+  }, [isOpen, clienteEditar, datosIniciales]);
 
   const handleSubirArchivo = async (e: React.ChangeEvent<HTMLInputElement>, tipo: 'dui' | 'promesa' | 'escritura') => {
     const file = e.target.files?.[0];
@@ -115,7 +142,8 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
     );
 
     const nuevoCliente: ClienteComprador = {
-      id: `cliente-${Date.now()}`,
+      ...(clienteEditar || {} as ClienteComprador),
+      id: clienteEditar?.id || `cliente-${Date.now()}`,
       nombre: nombre.trim(),
       email: email.trim(),
       telefono: telefono.trim(),
@@ -139,16 +167,16 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
       tasaInteresAnual,
       cuotaMensual,
       fechaInicio,
-      estado: 'activo',
-      amortizacion,
-      pagos: [],
-      notas: 'Expediente creado en el Módulo Administrativo Finca Celia Terrenos de Ricardo.',
+      estado: clienteEditar?.estado || 'activo',
+      amortizacion: clienteEditar?.amortizacion || amortizacion,
+      pagos: clienteEditar?.pagos || [],
+      notas: clienteEditar?.notas || 'Expediente creado en el Módulo Administrativo Finca Celia Terrenos de Ricardo.',
       documentos: {
         ...(docDui ? { copiaDui: docDui } : {}),
         ...(docPromesa ? { promesaVenta: docPromesa } : {}),
         ...(docEscritura ? { escrituraCompraVenta: docEscritura } : {})
       },
-      creadoEn: new Date().toISOString(),
+      creadoEn: clienteEditar?.creadoEn || new Date().toISOString(),
       actualizadoEn: new Date().toISOString()
     };
 
@@ -156,6 +184,8 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
     onClose();
   };
 
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
@@ -169,10 +199,10 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
             </div>
             <div>
               <h3 className="text-white font-display font-bold text-base">
-                Cliente Nuevo
+                {clienteEditar ? 'Editar Cliente' : 'Cliente Nuevo'}
               </h3>
               <p className="text-xs text-slate-400">
-                Registra los datos personales y de contacto del nuevo cliente
+                {clienteEditar ? 'Actualiza la información del cliente seleccionado' : 'Registra los datos personales y de contacto del nuevo cliente'}
               </p>
             </div>
           </div>
@@ -637,7 +667,7 @@ export const NuevoCompradorModal: React.FC<NuevoCompradorModalProps> = ({
               type="submit"
               className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-lg shadow-emerald-500/20 cursor-pointer transition-all"
             >
-              Guardar Comprador y Generar Hipoteca
+              {clienteEditar ? 'Guardar Cambios' : 'Guardar Comprador y Generar Hipoteca'}
             </button>
           </div>
 
