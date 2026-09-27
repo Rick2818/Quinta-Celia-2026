@@ -20,6 +20,7 @@ export const SupabaseConfigModal: React.FC<SupabaseConfigModalProps> = ({
 
   const [url, setUrl] = useState(configActual.url || '');
   const [anonKey, setAnonKey] = useState(configActual.anonKey || '');
+  const [accessToken, setAccessToken] = useState(configActual.accessToken || '');
   const [tableNameClientes, setTableNameClientes] = useState(configActual.tableNameClientes || 'clientes_quinta_celia');
   const [probando, setProbando] = useState(false);
   const [resultadoTest, setResultadoTest] = useState<{ exito: boolean; mensaje: string } | null>(null);
@@ -29,7 +30,7 @@ export const SupabaseConfigModal: React.FC<SupabaseConfigModalProps> = ({
     setProbando(true);
     setResultadoTest(null);
     try {
-      const res = await probarConexionSupabase(url, anonKey, tableNameClientes);
+      const res = await probarConexionSupabase(url, anonKey, tableNameClientes, accessToken);
       setResultadoTest(res);
     } catch (e: any) {
       setResultadoTest({ exito: false, mensaje: e?.message || 'Error inesperado' });
@@ -42,6 +43,7 @@ export const SupabaseConfigModal: React.FC<SupabaseConfigModalProps> = ({
     const nueva: SupabaseSettings = {
       url: url.trim(),
       anonKey: anonKey.trim(),
+      accessToken: accessToken.trim(),
       tableNameClientes: tableNameClientes.trim() || 'clientes_quinta_celia',
       tableNamePagos: 'pagos_quinta_celia',
       conectado: Boolean(url.trim() && anonKey.trim()),
@@ -100,7 +102,11 @@ export const SupabaseConfigModal: React.FC<SupabaseConfigModalProps> = ({
           
           <div className="p-3 bg-emerald-950/40 border border-emerald-800/40 rounded-2xl text-emerald-200 leading-relaxed">
             <p className="font-semibold text-emerald-300 mb-1">ℹ️ Persistencia Híbrida Inteligente:</p>
-            La app funciona de forma 100% inmediata mediante almacenamiento local seguro persistente. Si ingresas tus credenciales de Supabase, los nombres, contactos, celulares, direcciones y pagos se sincronizarán también directamente con tu proyecto Supabase.
+            La app funciona de forma 100% inmediata mediante almacenamiento local seguro persistente. Si configuras Supabase con RLS y un usuario autenticado, los nombres, contactos, direcciones y pagos se sincronizaran con tu proyecto sin depender de escritura publica anonima.
+          </div>
+
+          <div className="p-3 bg-amber-950/40 border border-amber-800/50 rounded-2xl text-amber-200 leading-relaxed">
+            La anon key no debe tener escritura publica sobre clientes o pagos. Si activas las politicas seguras del SQL, pega aqui un JWT de usuario autenticado para leer y escribir desde esta app.
           </div>
 
           {/* Form Fields */}
@@ -120,13 +126,26 @@ export const SupabaseConfigModal: React.FC<SupabaseConfigModalProps> = ({
 
             <div>
               <label className="block text-slate-300 font-semibold mb-1">
-                Supabase Anon (Public) Key:
+                Supabase Anon/Public Key:
               </label>
               <input
                 type="password"
                 value={anonKey}
                 onChange={(e) => setAnonKey(e.target.value)}
                 placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">
+                JWT de usuario autenticado (opcional, recomendado):
+              </label>
+              <input
+                type="password"
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
+                placeholder="Token de sesion Supabase Auth para RLS authenticated"
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>

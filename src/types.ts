@@ -115,6 +115,7 @@ export interface DocumentoExpediente {
 export interface SupabaseSettings {
   url: string;
   anonKey: string;
+  accessToken?: string;
   tableNameClientes: string;
   tableNamePagos: string;
   conectado: boolean;

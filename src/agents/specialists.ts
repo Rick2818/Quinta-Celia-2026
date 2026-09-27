@@ -269,14 +269,21 @@ async function registrarVisitaEnSupabase(visita: {
   tipoCita?: string;
   notas?: string;
 }) {
-  const SUPABASE_URL = 'https://bvblossugxhxttmkfpnf.supabase.co';
-  const ANON_KEY = 'sb_publishable_VQsDcGd6Lx6nusumq8Fl5A_N5pESetG';
   try {
+    const rawConfig = typeof localStorage !== 'undefined'
+      ? localStorage.getItem('quinta_celia_supabase_config_v1')
+      : null;
+    const parsedConfig = rawConfig ? JSON.parse(rawConfig) : null;
+    const SUPABASE_URL = parsedConfig?.url;
+    const ANON_KEY = parsedConfig?.anonKey;
+    const ACCESS_TOKEN = parsedConfig?.accessToken || ANON_KEY;
+    if (!SUPABASE_URL || !ANON_KEY) return;
+
     await fetch(`${SUPABASE_URL}/rest/v1/visitas_terreno`, {
       method: 'POST',
       headers: {
         'apikey': ANON_KEY,
-        'Authorization': `Bearer ${ANON_KEY}`,
+        'Authorization': `Bearer ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify([{

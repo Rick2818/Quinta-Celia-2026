@@ -1,12 +1,18 @@
 // scripts/seed-supabase.js
 // Sube automáticamente los datos semilla y el inventario a Supabase
 
-const SUPABASE_URL = 'https://bvblossugxhxttmkfpnf.supabase.co';
-const ANON_KEY = 'sb_publishable_VQsDcGd6Lx6nusumq8Fl5A_N5pESetG';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN || ANON_KEY;
+
+if (!SUPABASE_URL || !ANON_KEY) {
+  console.error('Configura SUPABASE_URL y SUPABASE_ANON_KEY antes de sembrar Supabase.');
+  process.exit(1);
+}
 
 const headers = {
   'apikey': ANON_KEY,
-  'Authorization': `Bearer ${ANON_KEY}`,
+  'Authorization': `Bearer ${ACCESS_TOKEN}`,
   'Content-Type': 'application/json',
   'Prefer': 'resolution=merge-duplicates'
 };

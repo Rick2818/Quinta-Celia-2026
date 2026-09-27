@@ -127,6 +127,8 @@ Base de datos PostgreSQL en la nube con Row Level Security (RLS) verificado:
 5. `mensajes_whatsapp`: Historial de conversaciones e intenciones procesadas por Gemini Flash 2.5.
 6. `visitas_terreno`: Agenda de visitas presenciales y reuniones por Google Meet.
 
+Para proteger datos reales de cartera, ejecutar `scripts/harden_supabase_rls.sql` en el SQL Editor de Supabase. Esa migracion elimina acceso de `anon` a `clientes_quinta_celia` y `pagos_quinta_celia`, y deja lectura/escritura solo para el rol `authenticated`.
+
 ---
 
 ## 💻 Formas de Uso y Despliegue

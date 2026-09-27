@@ -6,12 +6,24 @@ const STORAGE_KEY_CLIENTES = 'quinta_celia_clientes_v1';
 const STORAGE_KEY_PAGOS = 'quinta_celia_pagos_v1';
 
 export const defaultSupabaseSettings: SupabaseSettings = {
-  url: 'https://bvblossugxhxttmkfpnf.supabase.co',
-  anonKey: 'sb_publishable_VQsDcGd6Lx6nusumq8Fl5A_N5pESetG',
+  url: '',
+  anonKey: '',
+  accessToken: '',
   tableNameClientes: 'clientes_quinta_celia',
   tableNamePagos: 'pagos_quinta_celia',
-  conectado: true,
+  conectado: false,
 };
+
+function getSupabaseHeaders(config: SupabaseSettings): Record<string, string> {
+  const anonKey = config.anonKey.trim();
+  const bearerToken = (config.accessToken || config.anonKey).trim();
+
+  return {
+    'apikey': anonKey,
+    'Authorization': `Bearer ${bearerToken}`,
+    'Content-Type': 'application/json',
+  };
+}
 
 export function obtenerSupabaseConfig(): SupabaseSettings {
   try {
@@ -38,7 +50,7 @@ export function guardarSupabaseConfig(config: SupabaseSettings): void {
 /**
  * Prueba la conectividad real con Supabase REST API
  */
-export async function probarConexionSupabase(url: string, anonKey: string, tabla: string = 'clientes_quinta_celia'): Promise<{ exito: boolean; mensaje: string }> {
+export async function probarConexionSupabase(url: string, anonKey: string, tabla: string = 'clientes_quinta_celia', accessToken: string = ''): Promise<{ exito: boolean; mensaje: string }> {
   if (!url || !anonKey) {
     return { exito: false, mensaje: 'Por favor ingresa la URL del proyecto y el Anon Public Key de Supabase.' };
   }
@@ -49,11 +61,14 @@ export async function probarConexionSupabase(url: string, anonKey: string, tabla
   try {
     const res = await fetch(endpoint, {
       method: 'GET',
-      headers: {
-        'apikey': anonKey.trim(),
-        'Authorization': `Bearer ${anonKey.trim()}`,
-        'Content-Type': 'application/json',
-      }
+      headers: getSupabaseHeaders({
+        url,
+        anonKey,
+        accessToken,
+        tableNameClientes: tabla,
+        tableNamePagos: 'pagos_quinta_celia',
+        conectado: true,
+      })
     });
 
     if (res.ok || res.status === 200 || res.status === 206) {
@@ -121,9 +136,7 @@ export async function guardarClienteSupabase(cliente: ClienteComprador, config: 
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'apikey': config.anonKey.trim(),
-        'Authorization': `Bearer ${config.anonKey.trim()}`,
-        'Content-Type': 'application/json',
+        ...getSupabaseHeaders(config),
         'Prefer': 'resolution=merge-duplicates'
       },
       body: JSON.stringify(payload)
@@ -164,9 +177,7 @@ export async function registrarPagoSupabase(pago: PagoRealizado, config: Supabas
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'apikey': config.anonKey.trim(),
-        'Authorization': `Bearer ${config.anonKey.trim()}`,
-        'Content-Type': 'application/json',
+        ...getSupabaseHeaders(config),
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify(payload)
@@ -401,11 +412,7 @@ export async function cargarClientesDesdeSupabase(config: SupabaseSettings): Pro
 
     const res = await fetch(endpoint, {
       method: 'GET',
-      headers: {
-        'apikey': config.anonKey.trim(),
-        'Authorization': `Bearer ${config.anonKey.trim()}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getSupabaseHeaders(config)
     });
 
     if (!res.ok) return null;
@@ -521,11 +528,7 @@ export async function buscarClientesEnSupabase(termino: string, config: Supabase
 
     const res = await fetch(endpoint, {
       method: 'GET',
-      headers: {
-        'apikey': config.anonKey.trim(),
-        'Authorization': `Bearer ${config.anonKey.trim()}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getSupabaseHeaders(config)
     });
 
     if (!res.ok) return [];

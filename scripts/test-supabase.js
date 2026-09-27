@@ -1,10 +1,22 @@
 // scripts/test-supabase.js
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://bvblossugxhxttmkfpnf.supabase.co';
-const PUBLISHABLE_KEY = 'sb_publishable_VQsDcGd6Lx6nusumq8Fl5A_N5pESetG';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const PUBLISHABLE_KEY = process.env.SUPABASE_ANON_KEY;
+const ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN || PUBLISHABLE_KEY;
 
-const supabase = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+if (!SUPABASE_URL || !PUBLISHABLE_KEY) {
+  console.error('Configura SUPABASE_URL y SUPABASE_ANON_KEY antes de probar Supabase.');
+  process.exit(1);
+}
+
+const supabase = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
+  global: {
+    headers: {
+      Authorization: `Bearer ${ACCESS_TOKEN}`,
+    },
+  },
+});
 
 async function test() {
   console.log('Testing Supabase Client (read-only)...');

@@ -237,14 +237,27 @@ CREATE TABLE IF NOT EXISTS public.pagos_quinta_celia (
 ALTER TABLE public.clientes_quinta_celia ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pagos_quinta_celia ENABLE ROW LEVEL SECURITY;
 
--- 4. Políticas para acceso con anon key (lectura y escritura pública para el simulador)
+-- 4. Politicas seguras: anon bloqueado; authenticated autorizado
 DROP POLICY IF EXISTS "Permitir todo a anon en clientes" ON public.clientes_quinta_celia;
-CREATE POLICY "Permitir todo a anon en clientes" ON public.clientes_quinta_celia
-  FOR ALL TO anon USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Permitir todo a anon en pagos" ON public.pagos_quinta_celia;
-CREATE POLICY "Permitir todo a anon en pagos" ON public.pagos_quinta_celia
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Clientes autenticados lectura" ON public.clientes_quinta_celia;
+DROP POLICY IF EXISTS "Clientes autenticados escritura" ON public.clientes_quinta_celia;
+DROP POLICY IF EXISTS "Pagos autenticados lectura" ON public.pagos_quinta_celia;
+DROP POLICY IF EXISTS "Pagos autenticados escritura" ON public.pagos_quinta_celia;
+
+REVOKE ALL ON public.clientes_quinta_celia FROM anon;
+REVOKE ALL ON public.pagos_quinta_celia FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.clientes_quinta_celia TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.pagos_quinta_celia TO authenticated;
+
+CREATE POLICY "Clientes autenticados lectura" ON public.clientes_quinta_celia
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Clientes autenticados escritura" ON public.clientes_quinta_celia
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Pagos autenticados lectura" ON public.pagos_quinta_celia
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Pagos autenticados escritura" ON public.pagos_quinta_celia
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 `;
 }
 
