@@ -56,7 +56,9 @@ export interface ClienteComprador {
   id: string;
   nombre: string;
   email: string;
-  telefono: string;
+  telefono: string; // Celular principal / WhatsApp
+  telefonoFijo?: string;
+  celular2?: string;
   direccion: string;
   cedula: string;
   loteNombre: string;
